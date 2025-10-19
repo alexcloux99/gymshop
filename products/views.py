@@ -1,5 +1,5 @@
-from django.shortcuts import render
 from rest_framework import generics
+from django.db.models import Q
 from .models import Product
 from .serializers import ProductSerializer
 
@@ -12,6 +12,15 @@ class ProductListAPIView(generics.ListAPIView):
         category = self.request.query_params.get("category")
         if category in {"men","women","accessories"}:
             qs = qs.filter(category=category)
+
+        q = self.request.query_params.get("q")
+        if q:
+            qs = qs.filter(Q(name__icontains=q) | Q(description__icontains=q))
+
+        ordering = self.request.query_params.get("ordering") 
+        if ordering in {"name","-name","price","-price","created_at","-created_at"}:
+            qs = qs.order_by(ordering)
+
         return qs
 
 class ProductDetailAPIView(generics.RetrieveAPIView):
