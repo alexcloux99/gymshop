@@ -6,7 +6,6 @@ export async function apiGet(path, token) {
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
-    credentials: "include",
   });
   if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
   return res.json();
@@ -20,7 +19,6 @@ export async function apiPost(path, body, token) {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     body: JSON.stringify(body),
-    credentials: "include",
   });
   if (!res.ok) {
     const text = await res.text().catch(() => "");
