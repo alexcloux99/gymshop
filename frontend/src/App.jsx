@@ -5,6 +5,7 @@ import Cart from "./pages/Cart";
 import Orders from "./pages/Orders";
 import AuthProvider, { useAuth } from "./context/AuthContext.jsx";
 import CartProvider, { useCart } from "./context/CartContext.jsx";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 
 function Nav() {
@@ -44,3 +45,12 @@ export default function App() {
     </AuthProvider>
   );
 }
+
+<Routes>
+  <Route path="/" element={<Home />} />
+  <Route path="/login" element={<Login />} />
+  <Route path="/cart" element={<Cart />} />
+  <Route path="/orders" element={
+    <ProtectedRoute><Orders /></ProtectedRoute>
+  } />
+</Routes>
