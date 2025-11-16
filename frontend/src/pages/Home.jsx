@@ -1,35 +1,47 @@
 import { useEffect, useState } from "react";
-import { apiGet } from "../api/client";
-import ProductCard from "../components/ProductCard";
+import { apiGet } from "../api/client.js";
+import ProductCard from "../components/ProductCard.jsx";
+
+function useDebouncedValue(value, ms) {
+  const [v, setV] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setV(value), ms);
+    return () => clearTimeout(t);
+  }, [value, ms]);
+  return v;
+}
 
 export default function Home() {
   const [data, setData] = useState({ results: [], count: 0, next: null, previous: null });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");       
   const [category, setCategory] = useState("");
-  const [q, setQ] = useState("");
   const [ordering, setOrdering] = useState("");
-  const [error, setError] = useState(true);
   const [page, setPage] = useState(1);
+  const [rawQ, setRawQ] = useState("");
+  const q = useDebouncedValue(rawQ, 300);        
 
   useEffect(() => {
     setLoading(true);
     setError("");
     const params = new URLSearchParams();
     if (category) params.set("category", category);
-    if (q) params.set("q", q);
+    if (q)        params.set("q", q);            
     if (ordering) params.set("ordering", ordering);
-    if (page) params.set("page", page);
+    if (page)     params.set("page", page);
+
     apiGet(`/api/products/?${params.toString()}`)
-      .then((d) => setData(d))
+      .then(setData)
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
-  }, [category, q, ordering, page]);
+  }, [category, q, ordering, page]);             
 
   const totalPages = Math.max(1, Math.ceil((data.count || 0) / 12));
 
   return (
     <div style={{ maxWidth: 1100, margin: "0 auto", padding: 16 }}>
       <h1>GymShop</h1>
+
       <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
         <select value={category} onChange={(e) => { setCategory(e.target.value); setPage(1); }}>
           <option value="">Todas</option>
@@ -37,6 +49,7 @@ export default function Home() {
           <option value="women">Mujer</option>
           <option value="accessories">Accesorios</option>
         </select>
+
         <select value={ordering} onChange={(e) => { setOrdering(e.target.value); setPage(1); }}>
           <option value="">Orden</option>
           <option value="price">Precio ↑</option>
@@ -44,7 +57,12 @@ export default function Home() {
           <option value="name">Nombre A-Z</option>
           <option value="-created_at">Nuevos</option>
         </select>
-        <input placeholder="Buscar..." value={q} onChange={(e) => { setQ(e.target.value); setPage(1); }} />
+
+        <input
+          placeholder="Buscar..."
+          value={rawQ}
+          onChange={(e) => { setRawQ(e.target.value); setPage(1); }}
+        />
       </div>
 
       {loading && <p>Cargando…</p>}
@@ -58,8 +76,8 @@ export default function Home() {
 
           <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 16 }}>
             <button disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>‹ Anterior</button>
-            <span>Página {page} / {totalPages}</span>
-            <button disabled={page >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>Siguiente ›</button>
+            <span>Página {page} / {Math.max(1, Math.ceil((data.count || 0) / 12))}</span>
+            <button disabled={page >= Math.max(1, Math.ceil((data.count || 0) / 12))} onClick={() => setPage((p) => p + 1)}>Siguiente ›</button>
           </div>
         </>
       )}

@@ -1,16 +1,16 @@
-import { useCart } from "../context/CartContext";
-import { useAuth } from "../context/AuthContext";
-import { apiPost } from "../api/client";
+import { useCart } from "../context/CartContext.jsx";
+import { useAuth } from "../context/AuthContext.jsx";
+import { apiPost } from "../api/client.js";
 import { useState } from "react";
 
 export default function Cart() {
-  const { items, remove, clear, total } = useCart();
+  const { items, remove, clear, total, inc, dec } = useCart();
   const { token } = useAuth();
   const [msg, setMsg] = useState("");
 
   const checkout = async () => {
     setMsg("");
-    if (!token) return setMsg("Debes iniciar sesión.");
+    if (!token) return setMsg("Inicia sesión para continuar con el pedido.");
     if (!items.length) return setMsg("El carrito está vacío.");
     const body = { items: items.map(it => ({ product_id: it.id, qty: it.qty })) };
     try {
@@ -29,7 +29,11 @@ export default function Cart() {
       {items.map(it => (
         <div key={it.id} style={{ display: "flex", gap: 12, alignItems: "center", borderBottom: "1px solid #eee", padding: "8px 0" }}>
           <div style={{ flex: 1 }}>{it.name} ({it.category_label})</div>
-          <div>x{it.qty}</div>
+          <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+            <button onClick={() => dec(it.id)}>-</button>
+            <div>x{it.qty}</div>
+            <button onClick={() => inc(it.id)}>+</button>
+          </div>
           <div>{Number(it.price).toFixed(2)} €</div>
           <button onClick={() => remove(it.id)}>Quitar</button>
         </div>

@@ -28,9 +28,16 @@ export default function CartProvider({ children }) {
   const remove = (id) => setItems((prev) => prev.filter((p) => p.id !== id));
   const clear = () => setItems([]);
   const total = items.reduce((acc, it) => acc + it.price * it.qty, 0);
+  const inc = (id, step = 1) => {
+  setItems(prev => prev.map(p => p.id === id ? { ...p, qty: p.qty + step } : p));
+  };
+  const dec = (id, step = 1) => {
+  setItems(prev => prev.map(p => p.id === id ? { ...p, qty: Math.max(1, p.qty - step) } : p));
+  };
+
 
   return (
-    <CartCtx.Provider value={{ items, add, remove, clear, total }}>
+    <CartCtx.Provider value={{ items, add, remove, clear, total, inc, dec }}>
       {children}
     </CartCtx.Provider>
   );
