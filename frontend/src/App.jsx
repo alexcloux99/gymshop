@@ -6,6 +6,7 @@ import Orders from "./pages/Orders";
 import AuthProvider, { useAuth } from "./context/AuthContext.jsx";
 import CartProvider, { useCart } from "./context/CartContext.jsx";
 import ProtectedRoute from "./components/ProtectedRoute";
+import ProductDetail from "./pages/ProductDetail.jsx";
 
 
 function Nav() {
@@ -53,4 +54,5 @@ export default function App() {
   <Route path="/orders" element={
     <ProtectedRoute><Orders /></ProtectedRoute>
   } />
+  <Route path="/product/:slug" element={<ProductDetail />} />
 </Routes>

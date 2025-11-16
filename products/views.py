@@ -27,3 +27,8 @@ class ProductDetailAPIView(generics.RetrieveAPIView):
     serializer_class = ProductSerializer
     lookup_field = "slug"
     queryset = Product.objects.filter(active=True)
+
+    def get_queryset(self):
+        ctx = super().get_queryset()
+        ctx["request"] = self.request 
+        return ctx
