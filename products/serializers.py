@@ -9,12 +9,11 @@ class ProductSerializer(serializers.ModelSerializer):
         model = Product
         fields = [
             "id","name","slug","description","price","stock","category","category_label",
-            "image_url","active","created_at",
+            "image_url","active","created_at","image_url"
         ]
 
     def get_image_url(self, obj):
         request = self.context.get("request")
-        if obj.image and hasattr(obj.image, "url"):
-            url = obj.image.url
-            return request.build_absolute_uri(url) if request else url
-        return None
+        if obj.image and request:
+            return request.build_absolute_uri(obj.image.url)
+        return None 

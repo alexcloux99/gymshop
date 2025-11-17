@@ -2,6 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import generics, status
+from django.db import transaction
 
 from .models import Order, OrderItem
 from products.models import Product
@@ -11,25 +12,40 @@ from .serializers import OrderSerializer
 
 class CheckoutAPIView(APIView):
     permission_classes = [IsAuthenticated]
-
+    # usamos transacciones para evitar problemas de concurrencia y stock
+    @transaction.atomic
     def post(self, request):
         items = request.data.get("items", [])
         if not items:
             return Response({"detail": "Carrito vacío"}, status=400)
 
+        ids = [int(i["product_id"]) for i in items]
+        prod_map = {p.id: p for p in Product.objects.select_for_update().filter(id__in=ids)}
+
+        # Validaciones
+        lines = []
+        for it in items:
+            pid = int(it["product_id"])
+            qty = int(it.get("qty", 1))
+            p = prod_map.get(pid)
+            if not p:
+                return Response({"detail": f"Producto {pid} no existe"}, status=400)
+            if qty <= 0:
+                return Response({"detail": f"Cantidad inválida para {p.name}"}, status=400)
+            if p.stock < qty:
+                return Response({"detail": f"No hay stock {p.name}"}, status=400)
+            lines.append((p, qty))
+
         order = Order.objects.create(user=request.user, status="pending", total=0)
         total = 0
-        for it in items:
-            try:
-                p = Product.objects.get(pk=it["product_id"])
-            except Product.DoesNotExist:
-                return Response({"detail": f"Producto {it['product_id']} no existe"}, status=400)
-            qty = int(it.get("qty", 1))
+        for p, qty in lines:
             OrderItem.objects.create(order=order, product=p, qty=qty, price=p.price)
+            p.stock -= qty
+            p.save(update_fields=["stock"])
             total += p.price * qty
 
         order.total = total
-        order.save()
+        order.save(update_fields=["total"])
         return Response(OrderSerializer(order).data, status=status.HTTP_201_CREATED)
 
 class MyOrdersAPIView(generics.ListAPIView):

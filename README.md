@@ -12,4 +12,6 @@ arrancamos el back
 source ./env/Scripts/activate
 python manage.py runserver  
 arrancamos el front
+cd frontend
+npm i
 npm run dev 
