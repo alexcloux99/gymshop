@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { apiPost } from "../api/client";
 import { useAuth } from "../context/AuthContext.jsx";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 export default function Login() {
   const [username, setUsername] = useState("alex");
@@ -9,6 +9,7 @@ export default function Login() {
   const [error, setError] = useState("");
   const { login } = useAuth();
   const nav = useNavigate();
+  const location = useLocation();
 
   async function onSubmit(e) {
     e.preventDefault();
@@ -16,8 +17,8 @@ export default function Login() {
     try {
       const data = await apiPost("/api/auth/token/", { username, password });
       login(username, data.access);
-      nav("/");
-    } catch (err) {
+      nav(location.state?.from?.pathname || "/");
+    } catch {
       setError("Credenciales inválidas");
     }
   }

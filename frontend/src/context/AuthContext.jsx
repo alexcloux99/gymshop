@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useState } from "react";
 
 const AuthCtx = createContext(null);
 export const useAuth = () => useContext(AuthCtx);
@@ -23,8 +23,6 @@ export default function AuthProvider({ children }) {
     setUser(null);
     setToken("");
   };
-
-  useEffect(() => {}, [token]);
 
   return (
     <AuthCtx.Provider value={{ token, user, login, logout }}>

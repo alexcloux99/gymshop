@@ -7,6 +7,7 @@ import AuthProvider, { useAuth } from "./context/AuthContext.jsx";
 import CartProvider, { useCart } from "./context/CartContext.jsx";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ProductDetail from "./pages/ProductDetail.jsx";
+import RequireAuth from "./components/RequireAuth.jsx";
 
 
 function Nav() {
@@ -39,7 +40,11 @@ export default function App() {
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/cart" element={<Cart />} />
-            <Route path="/orders" element={<Orders />} />
+            <Route path="/product/:slug" element={<ProductDetail />} />
+            <Route
+              path="/orders"
+              element={<RequireAuth><Orders /></RequireAuth>}
+            />
           </Routes>
         </BrowserRouter>
       </CartProvider>
@@ -47,12 +52,3 @@ export default function App() {
   );
 }
 
-<Routes>
-  <Route path="/" element={<Home />} />
-  <Route path="/login" element={<Login />} />
-  <Route path="/cart" element={<Cart />} />
-  <Route path="/orders" element={
-    <ProtectedRoute><Orders /></ProtectedRoute>
-  } />
-  <Route path="/product/:slug" element={<ProductDetail />} />
-</Routes>
