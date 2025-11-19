@@ -27,10 +27,10 @@ def health(_):
 urlpatterns = [
     path("", health),                         
     path("admin/", admin.site.urls),
-    path("api/", include("api.urls")),
-    path("api/auth/", include("users.urls")),
+    path("api/", include("users.urls")),
+    path("api/products/", include("products.urls")),
     path("api/orders/", include("orders.urls")),
+    
 ]        
 
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
