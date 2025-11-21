@@ -10,8 +10,9 @@ export default function AuthProvider({ children }) {
     return u ? { username: u } : null;
   });
 
-  const login = (username, access) => {
+  const login = (username, access, refresh) => {
     localStorage.setItem("access", access);
+    if (refresh) localStorage.setItem("refresh", refresh);
     localStorage.setItem("username", username);
     setUser({ username });
     setToken(access);
@@ -19,6 +20,7 @@ export default function AuthProvider({ children }) {
 
   const logout = () => {
     localStorage.removeItem("access");
+    localStorage.removeItem("refresh");
     localStorage.removeItem("username");
     setUser(null);
     setToken("");

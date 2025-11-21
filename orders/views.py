@@ -1,13 +1,58 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from rest_framework import generics, status
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework import generics, status, permissions
 from django.db import transaction
 from .models import Order, OrderItem
 from products.models import Product
 from .serializers import OrderSerializer
+from django.shortcuts import get_object_or_404 
+from rest_framework.serializers import ModelSerializer, CharField, EmailField, ValidationError
+from django.contrib.auth import get_user_model
+from rest_framework.validators import UniqueValidator
+from django.core.validators import RegexValidator
 # Create your views here.
 # Añadimos endpoint para simular el pago del pedido y cambiar su estdado "pagado"
+
+
+User = get_user_model()
+# Validamos el email
+email_regex = RegexValidator(
+    regex=r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,24}$",
+    message="Email inválido."
+)
+
+class RegisterSerializer(ModelSerializer):
+    email = EmailField(
+        required=True,
+        max_length=80,
+        allow_blank=False,
+        validators=[UniqueValidator(queryset=User.objects.all(), message="Este email ya está registrado.")]
+    )
+    password = CharField(write_only=True, min_length=8, max_length=12)
+
+    class Meta:
+        model = User
+        fields = ["first_name", "last_name", "email", "password"]
+
+    def validate(self, attrs):
+        # por si acaso, que no nos lleguen espacios raros
+        for k in ["first_name", "last_name"]:
+            if k in attrs and isinstance(attrs[k], str):
+                attrs[k] = attrs[k].strip()
+        return attrs
+
+    def create(self, validated_data):
+        email = validated_data["email"].strip().lower()
+        return User.objects.create_user(
+            username=email,           # <<-- username = email
+            email=email,
+            password=validated_data["password"],
+        )
+
+class RegisterView(generics.CreateAPIView):
+    serializer_class = RegisterSerializer
+    permission_classes = [permissions.AllowAny]
 
 class CheckoutAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -55,13 +100,14 @@ class MyOrdersAPIView(generics.ListAPIView):
         return Order.objects.filter(user=self.request.user).order_by("-created_at")
 
 class MarkPaidAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+    # Solo quien tenga  permisos de admin/staff puede marcar como pagado el pedido
+    permission_classes = [IsAuthenticated, IsAdminUser]
 
     def post(self, request, pk):
-        try:
-            order = Order.objects.get(pk=pk, user=request.user)
-        except Order.DoesNotExist:
-            return Response({"detail": "No encontrado"}, status=404)
+        order = get_object_or_404(Order, pk=pk)
+        if order.status == "paid":
+            return Response({"detail": "El pedido ya está pagado."}, status=status.HTTP_400_BAD_REQUEST)
+
         order.status = "paid"
-        order.save()
-        return Response(OrderSerializer(order).data)
+        order.save(update_fields=["status"])
+        return Response({"status": "ok", "id": order.id, "new_status": order.status}, status=status.HTTP_200_OK)

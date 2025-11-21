@@ -24,13 +24,11 @@ from django.http import JsonResponse
 def health(_):
     return JsonResponse({"status": "ok", "app": "gymshop"})
 
+
 urlpatterns = [
-    path("", health),                         
+    path("", health),
     path("admin/", admin.site.urls),
     path("api/", include("users.urls")),
     path("api/products/", include("products.urls")),
     path("api/orders/", include("orders.urls")),
-    
-]        
-
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
