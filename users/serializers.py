@@ -35,3 +35,8 @@ class RegisterSerializer(serializers.ModelSerializer):
             email=email,
             password=validated_data["password"]
         )
+
+class UserPublicSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ["id", "username", "email"]

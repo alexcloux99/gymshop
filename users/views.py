@@ -4,6 +4,9 @@ from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from .serializers import RegisterSerializer
+from rest_framework.generics import RetrieveAPIView
+from rest_framework.permissions import IsAuthenticated
+from .serializers import UserPublicSerializer
 
 
 class RegisterView(generics.CreateAPIView):
@@ -36,3 +39,10 @@ class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 class EmailTokenObtainPairView(TokenObtainPairView):
     serializer_class = EmailTokenObtainPairSerializer
+
+class MeView(RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = UserPublicSerializer
+
+    def get_object(self):
+        return self.request.user
