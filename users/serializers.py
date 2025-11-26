@@ -1,17 +1,16 @@
-from django.contrib.auth.models import User
-from django.contrib.auth.password_validation import validate_password
-from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
+from django.contrib.auth.models import User
+from rest_framework import serializers
+from django.contrib.auth.password_validation import validate_password
 from django.utils.text import slugify
 
 class RegisterSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(
-        required=True,
-        max_length=80,
-        validators=[UniqueValidator(queryset=User.objects.all(), message="Este email ya está registrado.")]
+        required=True, max_length=80,
+        validators=[UniqueValidator(queryset=User.objects.all(), message="Email ya registrado")]
     )
-    password = serializers.CharField(write_only=True, min_length=8, max_length=64)
-    password2 = serializers.CharField(write_only=True, min_length=8, max_length=64)
+    password = serializers.CharField(write_only=True, min_length=8)
+    password2 = serializers.CharField(write_only=True, min_length=8)
 
     class Meta:
         model = User
@@ -26,9 +25,13 @@ class RegisterSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         email = validated_data["email"].strip().lower()
         base = slugify(email.split("@")[0]) or "user"
-        uname = base
+        username = base
         i = 1
-        while User.objects.filter(username=uname).exists():
+        while User.objects.filter(username=username).exists():
             i += 1
-            uname = f"{base}{i}"
-        return User.objects.create_user(username=uname, email=email, password=validated_data["password"])
+            username = f"{base}{i}"
+        return User.objects.create_user(
+            username=username,
+            email=email,
+            password=validated_data["password"]
+        )
