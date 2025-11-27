@@ -8,7 +8,11 @@ export default function AuthProvider({ children }) {
   const [token, setToken] = useState(() => localStorage.getItem("access") || "");
   const [user, setUser]   = useState(() => {
     const u = localStorage.getItem("username");
-    return u ? { username: u, email: localStorage.getItem("email") || "" } : null;
+    return u ? {
+      username: u,
+      email: localStorage.getItem("email") || "",
+      is_staff: localStorage.getItem("is_staff") === "true"
+    } : null;
   });
 
   // Cargar usuario
@@ -16,9 +20,10 @@ export default function AuthProvider({ children }) {
     if (!token) return;
     apiGet("/api/auth/me/", token)
       .then((me) => {
-        setUser({ username: me.username, email: me.email });
+        setUser({ username: me.username, email: me.email, is_staff: !!me.is_staff });
         localStorage.setItem("username", me.username);
         localStorage.setItem("email", me.email);
+        localStorage.setItem("is_staff", (!!me.is_staff).toString());
       })
       .catch(() => logout());
   }, [token]);
@@ -29,7 +34,7 @@ export default function AuthProvider({ children }) {
     setToken(access);
     // Perfil
     const me = await apiGet("/api/auth/me/", access);
-    setUser({ username: me.username, email: me.email });
+    setUser({ username: me.username, email: me.email, is_staff: !!me.is_staff });
     localStorage.setItem("username", me.username);
     localStorage.setItem("email", me.email);
   };
@@ -43,6 +48,7 @@ export default function AuthProvider({ children }) {
     localStorage.removeItem("refresh");
     localStorage.removeItem("username");
     localStorage.removeItem("email");
+    localStorage.removeItem("is_staff");
     setUser(null);
     setToken("");
   };
