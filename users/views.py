@@ -1,48 +1,52 @@
 from django.contrib.auth.models import User
 from rest_framework import generics, permissions
+from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework.exceptions import AuthenticationFailed
-from rest_framework_simplejwt.views import TokenObtainPairView
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.tokens import RefreshToken
 from .serializers import RegisterSerializer
-from rest_framework.generics import RetrieveAPIView
-from rest_framework.permissions import IsAuthenticated
-from .serializers import UserPublicSerializer
 
-
-class RegisterView(generics.CreateAPIView):
+class LoginWithEmailAPIView(APIView):
     permission_classes = [permissions.AllowAny]
-    serializer_class = RegisterSerializer
 
+    def post(self, request):
+        email = (request.data.get("email") or "").strip().lower()
+        password = request.data.get("password") or ""
 
-class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
-    # Cambiamos el campo de autenticacion a email 
-    username_field = 'email'
-
-    def validate(self, attrs):
-        email = (attrs.get('email') or '').strip().lower()
-        password = attrs.get('password') or ''
-
+        # buscamos por email; si no hay o la pass no coincide falla 
         try:
-            user = User.objects.get(email__iexact=email)
+            u = User.objects.get(email=email)
         except User.DoesNotExist:
-            raise AuthenticationFailed('Email incorrecto.')
+            raise AuthenticationFailed("Credenciales inválidas")
 
-        if not user.check_password(password):
-            raise AuthenticationFailed('Contraseña incorrecta.')
-        
-        refresh = self.get_token(user)
-        return {
-            'refresh': str(refresh),
-            'access': str(refresh.access_token),
-        }
+        if not u.check_password(password):
+            raise AuthenticationFailed("Credenciales inválidas")
 
+        refresh = RefreshToken.for_user(u)
+        return Response({
+            "access": str(refresh.access_token),
+            "refresh": str(refresh)
+        })
 
-class EmailTokenObtainPairView(TokenObtainPairView):
-    serializer_class = EmailTokenObtainPairSerializer
+# Registrar usuario (igual que tenías)
+class RegisterView(generics.CreateAPIView):
+    serializer_class = RegisterSerializer
+    permission_classes = [permissions.AllowAny]
 
-class MeView(RetrieveAPIView):
-    permission_classes = [IsAuthenticated]
-    serializer_class = UserPublicSerializer
+class MeView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    def get(self, request):
+        u = request.user
+        return Response({"id": u.id, "username": u.username, "email": u.email})
 
-    def get_object(self):
-        return self.request.user
+class LogoutView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    def post(self, request):
+        from rest_framework_simplejwt.tokens import RefreshToken
+        token = request.data.get("refresh")
+        if token:
+            try:
+                RefreshToken(token).blacklist()
+            except Exception:
+                pass
+        return Response({"status": "ok"})
