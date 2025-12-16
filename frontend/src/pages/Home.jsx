@@ -12,29 +12,50 @@ function useDebouncedValue(value, ms) {
 }
 
 export default function Home() {
-  const [data, setData] = useState({ results: [], count: 0, next: null, previous: null });
+  const [data, setData] = useState({ items: [], count: 0, next: null, previous: null });
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");       
+  const [error, setError] = useState("");
+
   const [category, setCategory] = useState("");
   const [ordering, setOrdering] = useState("");
   const [page, setPage] = useState(1);
   const [rawQ, setRawQ] = useState("");
-  const q = useDebouncedValue(rawQ, 300);        
+  const q = useDebouncedValue(rawQ, 300);
 
   useEffect(() => {
     setLoading(true);
     setError("");
+
     const params = new URLSearchParams();
     if (category) params.set("category", category);
-    if (q)        params.set("q", q);            
+    if (q)        params.set("q", q);
     if (ordering) params.set("ordering", ordering);
-    if (page)     params.set("page", page);
+    if (page)     params.set("page", String(page));
 
     apiGet(`/api/products/?${params.toString()}`)
-      .then(setData)
-      .catch((e) => setError(e.message))
+      .then((payload) => {
+        const items = Array.isArray(payload?.data)
+          ? payload.data
+          : Array.isArray(payload?.results)
+          ? payload.results
+          : Array.isArray(payload)
+          ? payload
+          : [];
+
+        const meta = payload?.meta ?? {
+          next: payload?.next ?? null,
+          previous: payload?.previous ?? null,
+          count: payload?.count ?? items.length,
+        };
+
+        setData({ items, count: meta.count ?? 0, next: meta.next ?? null, previous: meta.previous ?? null });
+      })
+      .catch((e) => {
+        setError(e.message || "Error");
+        setData({ items: [], count: 0, next: null, previous: null });
+      })
       .finally(() => setLoading(false));
-  }, [category, q, ordering, page]);             
+  }, [category, q, ordering, page]);
 
   const totalPages = Math.max(1, Math.ceil((data.count || 0) / 12));
 
@@ -71,13 +92,13 @@ export default function Home() {
       {!loading && !error && (
         <>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 12 }}>
-            {data.results.map((p) => <ProductCard key={p.id} p={p} />)}
+            {data.items.map((p) => <ProductCard key={p.id} p={p} />)}
           </div>
 
           <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 16 }}>
             <button disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>‹ Anterior</button>
-            <span>Página {page} / {Math.max(1, Math.ceil((data.count || 0) / 12))}</span>
-            <button disabled={page >= Math.max(1, Math.ceil((data.count || 0) / 12))} onClick={() => setPage((p) => p + 1)}>Siguiente ›</button>
+            <span>Página {page} / {totalPages}</span>
+            <button disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Siguiente ›</button>
           </div>
         </>
       )}

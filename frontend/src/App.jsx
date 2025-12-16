@@ -7,6 +7,7 @@ import Register from "./pages/Register";
 import AuthProvider, { useAuth } from "./context/AuthContext.jsx";
 import CartProvider, { useCart } from "./context/CartContext.jsx";
 import RequireAuth from "./components/RequireAuth.jsx";
+import ProductDetail from "./pages/ProductDetail.jsx";
 
 function Nav() {
   const { user, logout } = useAuth();
@@ -45,6 +46,7 @@ export default function App() {
             <Route path="/register" element={<Register />} /> 
             <Route path="/cart" element={<Cart />} />
             <Route path="/orders" element={<RequireAuth><Orders /></RequireAuth>} />
+            <Route path="/product/:slug" element={<ProductDetail />} />
           </Routes>
         </BrowserRouter>
       </CartProvider>
