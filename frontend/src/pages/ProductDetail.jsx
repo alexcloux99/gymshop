@@ -74,8 +74,10 @@ export default function ProductDetail() {
             <option value="XL">XL</option>
           </select>
         </div>
-
-        <div style={{ marginBottom: 12 }}>Stock: {p.stock}</div>
+        // Ocultamos el stock a usuarios solo accesibles para admins
+        {user?.is_staff && (
+          <div style={{ marginBottom: 12 }}>Stock: {p.stock}</div>
+        )}
         <button
           disabled={!size}
           onClick={() => add({ ...p, selected_size: size }, 1)}

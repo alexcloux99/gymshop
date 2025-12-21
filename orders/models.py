@@ -10,9 +10,13 @@ class Order(models.Model):
         ("paid", "Pagado"),
         ("cancelled", "Cancelado"),
     ]
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="orders")
-    status = models.CharField(max_length=20, choices=STATUS, default="pending")
-    total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    user = models.ForeignKey(User, on_delete=models.PROTECT)
+    status = models.CharField(max_length=12, choices=STATUS, default='pending')
+    subtotal = models.DecimalField(max_digits=9, decimal_places=2, default=0)
+    shipping = models.DecimalField(max_digits=9, decimal_places=2, default=0)
+    total = models.DecimalField(max_digits=9, decimal_places=2, default=0)
+    paypal_order_id = models.CharField(max_length=64, blank=True)
+    paid_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

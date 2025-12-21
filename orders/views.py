@@ -11,6 +11,8 @@ from rest_framework.serializers import ModelSerializer, CharField, EmailField, V
 from django.contrib.auth import get_user_model
 from rest_framework.validators import UniqueValidator
 from django.core.validators import RegexValidator
+from rest_framework.decorators import api_view, permission_classes
+from django.utils import timezone
 # Create your views here.
 # Añadimos endpoint para simular el pago del pedido y cambiar su estdado "pagado"
 
@@ -111,3 +113,54 @@ class MarkPaidAPIView(APIView):
         order.status = "paid"
         order.save(update_fields=["status"])
         return Response({"status": "ok", "id": order.id, "new_status": order.status}, status=status.HTTP_200_OK)
+    
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@transaction.atomic
+def create_order(request):
+    items = request.data.get('items') or []
+    if not items:
+        return Response({'detail': 'Carrito vacío'}, status=400)
+
+    order = Order.objects.create(user=request.user, shipping=request.data.get('shipping') or 0)
+    subtotal = 0
+
+    for it in items:
+        pid = it.get('product') or it.get('product_id')   
+        qty = int(it.get('qty', 1))
+        p = Product.objects.select_for_update().get(pk=pid)
+        if qty < 1 or p.stock < qty:
+            return Response({'detail': f'Sin stock para {p.name}'}, status=400)
+        p.stock -= qty
+        p.save(update_fields=['stock'])
+        OrderItem.objects.create(order=order, product=p, qty=qty, price=p.price)
+        subtotal += p.price * qty
+
+    order.subtotal = subtotal
+    order.total = subtotal + order.shipping
+    order.save(update_fields=['subtotal','total'])
+    return Response(OrderSerializer(order, context={'request':request}).data, status=201)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def my_orders(request):
+    qs = Order.objects.filter(user=request.user).order_by('-created_at')
+    ser = OrderSerializer(qs, many=True, context={'request':request})
+    return Response({'results': ser.data})
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def order_detail(request, pk):
+    o = Order.objects.get(pk=pk, user=request.user)
+    return Response(OrderSerializer(o, context={'request':request}).data)
+
+# Para staff: marcar pagado manual (si un día te da la vena)
+@api_view(['POST'])
+@permission_classes([IsAdminUser])
+def admin_mark_paid(request, pk):
+    o = Order.objects.get(pk=pk)
+    o.status = 'paid'
+    o.paid_at = timezone.now()
+    o.save(update_fields=['status','paid_at'])
+    return Response({'ok': True})
