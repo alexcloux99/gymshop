@@ -1,61 +1,57 @@
-import { createContext, useContext, useEffect, useState } from "react";
-import { apiGet, apiPost } from "../api/client";
+import { createContext, useContext, useState, useEffect } from "react";
+import { apiPost, apiGet } from "../api/client";
 
-const AuthCtx = createContext(null);
-export const useAuth = () => useContext(AuthCtx);
+export const AuthContext = createContext();
 
 export default function AuthProvider({ children }) {
-  const [token, setToken] = useState(() => localStorage.getItem("access") || "");
-  const [user, setUser]   = useState(() => {
-    const u = localStorage.getItem("username");
-    return u ? {
-      username: u,
-      email: localStorage.getItem("email") || "",
-      is_staff: localStorage.getItem("is_staff") === "true"
-    } : null;
-  });
+  const [user, setUser] = useState(null);
+  const [token, setToken] = useState(localStorage.getItem("gymshop_token"));
+  const [loading, setLoading] = useState(true);
 
-  // Cargar usuario
   useEffect(() => {
-    if (!token) return;
-    apiGet("/api/auth/me/", token)
-      .then((me) => {
-        setUser({ username: me.username, email: me.email, is_staff: !!me.is_staff });
-        localStorage.setItem("username", me.username);
-        localStorage.setItem("email", me.email);
-        localStorage.setItem("is_staff", (!!me.is_staff).toString());
-      })
-      .catch(() => logout());
+    if (token) {
+      apiGet("/api/auth/me/", token) 
+        .then(setUser)
+        .catch(() => logout())
+        .finally(() => setLoading(false));
+    } else {
+      setLoading(false);
+    }
   }, [token]);
 
-  const login = async (email, access, refresh) => {
-    localStorage.setItem("access", access);
-    if (refresh) localStorage.setItem("refresh", refresh);
-    setToken(access);
-    // Perfil
-    const me = await apiGet("/api/auth/me/", access);
-    setUser({ username: me.username, email: me.email, is_staff: !!me.is_staff });
-    localStorage.setItem("username", me.username);
-    localStorage.setItem("email", me.email);
-  };
-
-  const logout = async () => {
+  async function login(email, password) {
     try {
-      const refresh = localStorage.getItem("refresh");
-      if (refresh) await apiPost("/api/auth/logout/", { refresh }, token);
-    } catch {}
-    localStorage.removeItem("access");
-    localStorage.removeItem("refresh");
-    localStorage.removeItem("username");
-    localStorage.removeItem("email");
-    localStorage.removeItem("is_staff");
+      const resp = await apiPost("/api/auth/token/", { 
+          email: email, 
+          password: password 
+      });
+      
+      const newToken = resp.access || resp.token;
+      
+      if (!newToken) throw new Error("No se recibió el token");
+
+      localStorage.setItem("gymshop_token", newToken);
+      setToken(newToken);
+    
+      const userData = await apiGet("/api/auth/me/", newToken);
+      setUser(userData);
+      
+    } catch (err) {
+      console.error("Error en login:", err);
+      throw new Error("Credenciales incorrectas");
+    }
+  }
+  function logout() {
+    localStorage.removeItem("gymshop_token");
+    setToken(null);
     setUser(null);
-    setToken("");
-  };
+  }
 
   return (
-    <AuthCtx.Provider value={{ token, user, login, logout }}>
-      {children}
-    </AuthCtx.Provider>
+    <AuthContext.Provider value={{ user, token, login, logout, loading }}>
+      {!loading && children}
+    </AuthContext.Provider>
   );
 }
+
+export const useAuth = () => useContext(AuthContext);

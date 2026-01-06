@@ -2,6 +2,7 @@ import { useCart } from "../context/CartContext.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { apiPost } from "../api/client.js";
 import { useState } from "react";
+import { PayPalButtons } from "@paypal/react-paypal-js";
 
 export default function Cart() {
   const { items, remove, clear, total, inc, dec } = useCart();
@@ -18,63 +19,91 @@ export default function Cart() {
       if (!items.length) throw new Error("El carrito está vacío.");
 
       const body = { items: items.map(it => ({ product_id: it.id, qty: it.qty })) };
-      const order = await apiPost("/api/orders/checkout/", body, token); // ✅ ahora existe
+      
+      const order = await apiPost("/api/orders/create/", body, token); 
+      
       setOrderId(order.id);
-      setMsg(`Pedido #${order.id} creado. Total: ${order.total} €`);
-      return order.id;
+      return order;
     } catch (e) {
-      setErr(`Error en checkout: ${e.message || e}`);
+      setErr(`Error: ${e.message || e}`);
       return null;
     } finally {
       setBusy(false);
     }
   }
 
-  async function payWithPaypalSim() {
-    setMsg(""); setErr(""); setBusy(true);
+  async function onPayPalSuccess(details, data, id) {
     try {
-      const id = orderId ?? (await createOrder());
-      if (!id) return;
-
-      await apiPost("/api/payments/paypal/simulate/", { order_id: id }, token);
-      setMsg(`Pago simulado OK. Pedido #${id} pagado.`);
-      clear();
+      setBusy(true);
+      await apiPost(`/api/orders/${id}/pay/`, { id: details.id }, token);
+      
+      setMsg("¡Pago de GymShop completado con éxito! Gracias por tu compra.");
+      clear(); 
       setOrderId(null);
     } catch (e) {
-      setErr(`Error en pago simulado: ${e.message || e}`);
+      setErr("El pago se hizo pero hubo un error al actualizar el pedido.");
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <div style={{ maxWidth: 900, margin: "0 auto", padding: 16 }}>
-      <h2>Carrito</h2>
-      {!items.length && <p>Vacío. Añade algo primero.</p>}
+    <div style={{ maxWidth: 900, margin: "0 auto", padding: 16, color: "#fff", backgroundColor: "#121212", minHeight: "80vh" }}>
+      <h2>Tu Carrito de Gym</h2>
+      {!items.length && <p>Tu mochila está vacía. Añade algo de ropa.</p>}
 
       {items.map(it => (
-        <div key={it.id} style={{ display: "flex", gap: 12, alignItems: "center", borderBottom: "1px solid #eee", padding: "8px 0" }}>
-          <div style={{ flex: 1 }}>{it.name}</div>
-          <div style={{ display:"flex", alignItems:"center", gap:6 }}>
-            <button onClick={() => dec(it.id)} disabled={busy}>-</button>
-            <div>x{it.qty}</div>
-            <button onClick={() => inc(it.id)} disabled={busy}>+</button>
+        <div key={it.id} style={{ display: "flex", gap: 12, alignItems: "center", borderBottom: "1px solid #333", padding: "12px 0" }}>
+          <div style={{ flex: 1 }}>{it.name} <span style={{fontSize: '0.8em', color: '#888'}}>({it.size})</span></div>
+          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+            <button onClick={() => dec(it.id)} disabled={busy} style={{padding: "2px 8px"}}>-</button>
+            <div>{it.qty}</div>
+            <button onClick={() => inc(it.id)} disabled={busy} style={{padding: "2px 8px"}}>+</button>
           </div>
-          <div>{Number(it.price).toFixed(2)} €</div>
-          <button onClick={() => remove(it.id)} disabled={busy}>Quitar</button>
+          <div style={{minWidth: 80, textAlign: 'right'}}>{(it.price * it.qty).toFixed(2)} €</div>
+          <button onClick={() => remove(it.id)} disabled={busy} style={{background: "none", border: "1px solid crimson", color: "crimson", cursor: "pointer"}}>Quitar</button>
         </div>
       ))}
 
-      <div style={{ marginTop: 12 }}><strong>Total:</strong> {total.toFixed(2)} €</div>
+      {items.length > 0 && (
+        <div style={{ marginTop: 20, padding: 16, border: "1px solid #333", borderRadius: 8 }}>
+          <div style={{ fontSize: "1.5rem", marginBottom: 16 }}><strong>Total:</strong> {total.toFixed(2)} €</div>
+          
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            
+            {!orderId ? (
+               <button 
+                onClick={createOrder} 
+                disabled={busy}
+                style={{ padding: 12, backgroundColor: "#ccff00", color: "#000", fontWeight: "bold", border: "none", borderRadius: 4, cursor: "pointer" }}
+               >
+                 CONFIRMAR DATOS Y PAGAR
+               </button>
+            ) : (
+              <div style={{ marginTop: 10 }}>
+                <p style={{ color: "#ccff00", marginBottom: 10 }}>✓ Pedido #{orderId} listo para pago:</p>
+                <PayPalButtons 
+                  style={{ layout: "vertical" }}
+                  createOrder={(data, actions) => {
+                    return actions.order.create({
+                      purchase_units: [{ amount: { value: total.toFixed(2) } }]
+                    });
+                  }}
+                  onApprove={(data, actions) => {
+                    return actions.order.capture().then((details) => onPayPalSuccess(details, data, orderId));
+                  }}
+                />
+                <button onClick={() => setOrderId(null)} style={{background: "none", border: "none", color: "#888", cursor: "pointer", marginTop: 10}}>Cancelar y volver</button>
+              </div>
+            )}
 
-      <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-        <button onClick={createOrder} disabled={busy || !items.length}>Crear pedido</button>
-        <button onClick={payWithPaypalSim} disabled={busy || !items.length}>Pagar con PayPal</button>
-        <button onClick={clear} disabled={busy}>Vaciar</button>
-      </div>
+            <button onClick={clear} disabled={busy} style={{ background: "none", color: "#888", border: "none", cursor: "pointer", textDecoration: "underline" }}>Vaciar carrito</button>
+          </div>
+        </div>
+      )}
 
-      {msg && <p style={{ marginTop: 10 }}>{msg}</p>}
-      {err && <p style={{ marginTop: 10, color: "crimson" }}>{err}</p>}
+      {msg && <div style={{ marginTop: 20, padding: 15, backgroundColor: "#1e3a1e", color: "#ccff00", borderRadius: 4 }}>{msg}</div>}
+      {err && <div style={{ marginTop: 20, padding: 15, backgroundColor: "#3a1e1e", color: "crimson", borderRadius: 4 }}>{err}</div>}
     </div>
   );
 }

@@ -1,51 +1,83 @@
 import { useState } from "react";
-import { apiPost } from "../api/client";
-import { useAuth } from "../context/AuthContext.jsx";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { useNavigate, Link } from "react-router-dom";
+import { FiEye, FiEyeOff } from "react-icons/fi";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [show, setShow] = useState(false);
-  const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false); 
   const { login } = useAuth();
-  const nav = useNavigate();
-  const loc = useLocation();
+  const navigate = useNavigate();
+  const [error, setError] = useState("");
 
-  async function onSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     setError("");
     try {
-      const data = await apiPost("/api/auth/token/", { email, password });
-      // guardar access + refresh
-      login(email, data.access, data.refresh);
-      nav(loc.state?.from?.pathname || "/");
-    } catch (_) {
-      setError("Email o contraseña incorrectos.");
+      await login(email, password);
+      navigate("/");
+    } catch (err) {
+      setError("Credenciales incorrectas o cuenta inexistente.");
     }
   }
 
   return (
-    <div style={{ maxWidth: 420, margin: "60px auto" }}>
-      <h2>Entrar</h2>
-      <form onSubmit={onSubmit} style={{ display: "grid", gap: 8 }}>
-        <input type="email" placeholder="Email" value={email} required maxLength={80} onChange={(e) => setEmail(e.target.value)} />
-        <div style={{ display: "flex", gap: 8 }}>
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "80vh", backgroundColor: "#fff" }}>
+      
+      
+      <h2 style={{ fontWeight: "900", letterSpacing: "-1.5px", marginBottom: "10px", fontSize: "32px", fontFamily: "Helvetica, Arial, sans-serif" }}>GYMSHOP LOGIN</h2>
+      
+      <p style={{ color: "#666", textAlign: "center", maxWidth: "350px", fontSize: "14px", marginBottom: "35px" }}>
+        Compra tus estilos, guarda tus favoritos y entrena con nosotros.
+      </p>
+
+      <form onSubmit={handleSubmit} style={{ width: "100%", maxWidth: "420px", display: "flex", flexDirection: "column", gap: "18px", padding: "0 25px" }}>
+        
+        <input
+          type="email"
+          placeholder="Email address*"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          style={{ padding: "16px", border: "1px solid #ccc", borderRadius: "4px", fontSize: "16px", outline: "none" }}
+        />
+        
+        <div style={{ position: "relative", width: "100%" }}>
           <input
-            type={show ? "text" : "password"}
-            placeholder="Contraseña"
+            type={showPassword ? "text" : "password"}
+            placeholder="Password*"
             value={password}
-            minLength={8}
-            maxLength={64}
-            required
             onChange={(e) => setPassword(e.target.value)}
-            style={{ flex: 1 }}
+            required
+            style={{ padding: "16px", border: "1px solid #ccc", borderRadius: "4px", fontSize: "16px", width: "100%", boxSizing: "border-box", outline: "none" }}
           />
-          <button type="button" onClick={() => setShow(s => !s)}>{show ? "Ocultar" : "Ver"}</button>
+          <div 
+            onClick={() => setShowPassword(!showPassword)}
+            style={{ position: "absolute", right: "15px", top: "50%", transform: "translateY(-50%)", cursor: "pointer", color: "#666" }}
+          >
+            {showPassword ? <FiEyeOff size={22} /> : <FiEye size={22} />}
+          </div>
         </div>
-        {error && <div style={{ color: "crimson" }}>{error}</div>}
-        <button>Entrar</button>
+
+        {error && <p style={{ color: "#d32f2f", fontSize: "13px", textAlign: "center", fontWeight: "600" }}>{error}</p>}
+
+        <Link to="/forgot" style={{ color: "#000", fontSize: "13px", fontWeight: "700", textAlign: "center", textDecoration: "underline" }}>
+          ¿Has olvidado tu contraseña?
+        </Link>
+
+        <button type="submit" style={{
+          backgroundColor: "#000", color: "#fff", padding: "18px", border: "none", 
+          borderRadius: "40px", fontWeight: "900", fontSize: "16px", cursor: "pointer",
+          textTransform: "uppercase", marginTop: "10px", letterSpacing: "1px"
+        }}>
+          LOG IN
+        </button>
       </form>
+
+      <p style={{ marginTop: "40px", fontSize: "14px", color: "#666" }}>
+        ¿No tienes una cuenta? <Link to="/register" style={{ color: "#000", fontWeight: "900", textDecoration: "none", borderBottom: "2px solid #000" }}>REGÍSTRATE</Link>
+      </p>
     </div>
   );
 }

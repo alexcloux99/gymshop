@@ -1,127 +1,110 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { apiGet, apiPost } from "../api/client";
+import { apiGet, apiPost, absUrl } from "../api/client";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
+import { FiStar, FiShoppingBag } from "react-icons/fi";
 
 export default function ProductDetail() {
   const { slug } = useParams();
   const { add } = useCart();
   const { token, user } = useAuth();
-
+  
   const [p, setP] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState("");
-
-  // UI local
-  const [size, setSize] = useState("");
-  const [rating, setRating] = useState(5);
-  const [desc, setDesc] = useState("");
-  const [msg, setMsg] = useState("");
+  const [selectedSize, setSelectedSize] = useState("");
+  const [review, setReview] = useState({ rating: 5, description: "" });
 
   useEffect(() => {
-    let ignore = false;
-    setLoading(true);
-    setErr("");
-    apiGet(`/api/products/get/${slug}/`)
-      .then(data => { if (!ignore) setP(data); })
-      .catch(e => { if (!ignore) setErr(e.message || "Error"); })
-      .finally(() => { if (!ignore) setLoading(false); });
-    return () => { ignore = true; };
+    apiGet(`/api/products/${slug}/`).then(setP);
   }, [slug]);
 
-  async function submitReview() {
-    setMsg("");
-    if (!token) { setMsg("Inicia sesión para opinar."); return; }
-    try {
-      await apiPost(`/api/products/review/${p.id}/`, { rating, description: desc }, token);
-      setMsg("Gracias por tu reseña.");
-      setDesc("");
-      const fresh = await apiGet(`/api/products/get/${slug}/`);
-      setP(fresh);
-    } catch (e) {
-      setMsg("No se pudo guardar la reseña: " + (e.message || "error"));
-    }
-  }
+  if (!p) return <p style={{textAlign: 'center', padding: '50px'}}>Cargando producto...</p>;
 
-  if (loading) return <div style={{ padding: 16 }}>Cargando…</div>;
-  if (err) return <div style={{ padding: 16, color: "crimson" }}>Error: {err}</div>;
-  if (!p) return null;
+  // Lista de tallas disponibles
+  const sizes = ["S", "M", "L", "XL"];
 
   return (
-    <div style={{ maxWidth: 1100, margin: "0 auto", padding: 16, display: "grid", gap: 24, gridTemplateColumns: "1.2fr 1fr" }}>
+    <div style={{ maxWidth: 1200, margin: "40px auto", padding: "0 20px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "60px" }}>
+      
       <div>
-        {p.image ? (
-          <img src={p.image} alt={p.name} style={{ width: "100%", maxWidth: 680, borderRadius: 10 }} />
-        ) : (
-          <div style={{ height: 420, background: "#f3f3f3", borderRadius: 10 }} />
-        )}
+        <img src={absUrl(p.image)} alt={p.name} style={{ width: "100%", backgroundColor: "#f5f5f5" }} />
       </div>
 
-      <div>
-        <h1 style={{ marginTop: 0 }}>{p.name}</h1>
-        <div style={{ color: "#666", marginBottom: 8 }}>{p.category}</div>
-        <div style={{ fontSize: 22, fontWeight: 700, marginBottom: 12 }}>{Number(p.price).toFixed(2)} €</div>
+      {/* DERECHA: Info */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+        <div style={{ fontSize: "12px", fontWeight: "700", color: "#666", textTransform: "uppercase" }}>{p.category}</div>
+        <h1 style={{ fontSize: "36px", fontWeight: "900", margin: 0, textTransform: "uppercase" }}>{p.name}</h1>
+        <div style={{ fontSize: "24px", fontWeight: "700" }}>{p.price} €</div>
 
-        {/* Selector de talla */}
-        <div style={{ marginBottom: 12 }}>
-          <label style={{ fontWeight: 600 }}>Talla: </label>
-          <select value={size} onChange={(e) => setSize(e.target.value)} style={{ marginLeft: 8 }}>
-            <option value="">Selecciona…</option>
-            <option value="S">S</option>
-            <option value="M">M</option>
-            <option value="L">L</option>
-            <option value="XL">XL</option>
-          </select>
-        </div>
-        // Ocultamos el stock a usuarios solo accesibles para admins
-        {user?.is_staff && (
-          <div style={{ marginBottom: 12 }}>Stock: {p.stock}</div>
-        )}
-        <button
-          disabled={!size}
-          onClick={() => add({ ...p, selected_size: size }, 1)}
-          style={{ padding: "10px 14px", borderRadius: 8, cursor: size ? "pointer" : "not-allowed" }}
-        >
-          Añadir al carrito
-        </button>
-
-        <hr style={{ margin: "20px 0" }} />
-
-        <h3>Descripción</h3>
-        <p>{p.description || "Sin descripción"}</p>
-
-        <h3 style={{ marginTop: 20 }}>Reseñas</h3>
-        {Array.isArray(p.reviews) && p.reviews.length ? (
-          <ul style={{ paddingLeft: 18 }}>
-            {p.reviews.map((r) => (
-              <li key={r.id || r.created} style={{ marginBottom: 8 }}>
-                <strong>{r.username || r.user}</strong> • {r.rating}/5
-                <div>{r.description}</div>
-              </li>
-            ))}
-          </ul>
-        ) : <p>No hay reseñas todavía.</p>}
-
-        {user && (
-          <div style={{ marginTop: 16, display: "grid", gap: 8, maxWidth: 420 }}>
-            <h4>Escribe tu reseña</h4>
-            <label>
-              Puntuación:
-              <select value={rating} onChange={(e) => setRating(Number(e.target.value))} style={{ marginLeft: 8 }}>
-                {[5,4,3,2,1].map(n => <option key={n} value={n}>{n}</option>)}
-              </select>
-            </label>
-            <textarea
-              placeholder="¿Qué tal el producto?"
-              value={desc}
-              onChange={(e) => setDesc(e.target.value)}
-              rows={3}
-            />
-            <button onClick={submitReview}>Enviar reseña</button>
-            {msg && <div style={{ color: msg.startsWith("No se pudo") ? "crimson" : "green" }}>{msg}</div>}
+        {p.category !== "accessories" && (
+          <div style={{ marginTop: "20px" }}>
+            <div style={{ fontWeight: "700", marginBottom: "10px", fontSize: "14px" }}>SELECCIONAR TALLA</div>
+            <div style={{ display: "flex", gap: "10px" }}>
+              {sizes.map(size => (
+                <button
+                  key={size}
+                  onClick={() => setSelectedSize(size)}
+                  style={{
+                    width: "60px", height: "45px", border: selectedSize === size ? "2px solid #000" : "1px solid #ddd",
+                    backgroundColor: selectedSize === size ? "#000" : "#fff",
+                    color: selectedSize === size ? "#fff" : "#000",
+                    fontWeight: "700", cursor: "pointer", transition: "0.2s"
+                  }}
+                >
+                  {size}
+                </button>
+              ))}
+            </div>
           </div>
         )}
+
+        <button 
+          onClick={() => add(p, 1)}
+          style={{
+            marginTop: "30px", padding: "18px", backgroundColor: "#000", color: "#fff",
+            border: "none", fontWeight: "800", fontSize: "16px", cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: "10px"
+          }}
+        >
+          <FiShoppingBag /> AÑADIR AL CARRITO
+        </button>
+
+        <div style={{ borderTop: "1px solid #eee", marginTop: "30px", paddingTop: "20px" }}>
+          <div style={{ fontWeight: "700", marginBottom: "10px" }}>DESCRIPCIÓN</div>
+          <p style={{ color: "#444", lineHeight: "1.6", fontSize: "15px" }}>{p.description}</p>
+        </div>
+
+        {/* RESEÑAS LIMPIAS */}
+        <div style={{ marginTop: "40px" }}>
+          <div style={{ fontWeight: "900", fontSize: "18px", marginBottom: "20px", borderBottom: "2px solid #000", display: "inline-block" }}>RESEÑAS</div>
+          
+          {p.reviews?.length === 0 ? <p style={{color: '#888'}}>Aún no hay reseñas. Sé el primero.</p> : (
+            p.reviews?.map((r, i) => (
+              <div key={i} style={{ marginBottom: "20px", paddingBottom: "15px", borderBottom: "1px solid #f0f0f0" }}>
+                <div style={{ display: "flex", gap: "2px", color: "#000", marginBottom: "5px" }}>
+                  {[...Array(5)].map((_, idx) => (
+                    <FiStar key={idx} fill={idx < r.rating ? "#000" : "none"} size={12} />
+                  ))}
+                </div>
+                <div style={{ fontWeight: "700", fontSize: "14px" }}>{r.username}</div>
+                <p style={{ margin: "5px 0 0 0", color: "#555", fontSize: "14px" }}>{r.description}</p>
+              </div>
+            ))
+          )}
+
+          {/* Reseñas (Solo si esta logueado) */}
+          {token && (
+            <div style={{ marginTop: "30px", backgroundColor: "#f9f9f9", padding: "20px" }}>
+              <div style={{ fontWeight: "700", marginBottom: "10px" }}>DEJA TU OPINIÓN</div>
+              <textarea 
+                placeholder="¿Qué te ha parecido el producto?"
+                style={{ width: "100%", padding: "10px", border: "1px solid #ddd", minHeight: "80px", marginBottom: "10px", fontFamily: "inherit" }}
+                onChange={(e) => setReview({...review, description: e.target.value})}
+              ></textarea>
+              <button style={{ backgroundColor: "#000", color: "#fff", border: "none", padding: "10px 20px", fontWeight: "700", cursor: "pointer" }}>ENVIAR RESEÑA</button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -21,8 +21,8 @@ class ProductSerializer(serializers.ModelSerializer):
         model = Product
         fields = [
             "id", "slug", "name", "image", "category", "description",
-            "price", "stock", "created", "rating", "num_reviews", "reviews",
-        ]
+            "price", "stock", "size", "created", "rating", "num_reviews", "reviews",
+        ] 
 
     def get_image(self, obj):
         img = getattr(obj, "image", None)
@@ -33,8 +33,7 @@ class ProductSerializer(serializers.ModelSerializer):
         return request.build_absolute_uri(url) if request else url
 
     def get_created(self, obj):
-        # Tu modelo tiene created_at
-        return getattr(obj, "created_at", None)
+        return obj.created_at
 
     def get_rating(self, obj):
         try:

@@ -1,7 +1,6 @@
 from django.db import models
 from django.utils.text import slugify
 from django.contrib.auth.models import User
-# Create your models here.
 
 class Product(models.Model):
     CATEGORY_CHOICES = [
@@ -10,12 +9,23 @@ class Product(models.Model):
         ("accessories", "Accesorios"),
     ]
 
+    # Añadimos tallas
+    SIZE_CHOICES = [
+        ("N/A", "No Aplica"), 
+        ("S", "S"),
+        ("M", "M"),
+        ("L", "L"),
+        ("XL", "XL"),
+    ]
+
     name = models.CharField(max_length=150)
     slug = models.SlugField(max_length=160, unique=True, blank=True)
     description = models.TextField(blank=True)
     price = models.DecimalField(max_digits=9, decimal_places=2)
     stock = models.PositiveIntegerField(default=0)
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
+    size = models.CharField(max_length=5, choices=SIZE_CHOICES, default="N/A")
+
     image = models.ImageField(upload_to="products/", blank=True, null=True)
     active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -30,7 +40,8 @@ class Product(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return self.name
+        return f"{self.name} ({self.size})"
+
 class Reviews(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="reviews")
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)

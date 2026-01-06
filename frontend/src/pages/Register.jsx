@@ -1,82 +1,61 @@
 import { useState } from "react";
 import { apiPost } from "../api/client";
-import { useNavigate } from "react-router-dom";
-
-const EMAIL_RE = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,24}$/;
+import { useNavigate, Link } from "react-router-dom";
+import { FiEye, FiEyeOff } from "react-icons/fi";
 
 export default function Register() {
-  const [email, setEmail] = useState("");
-  const [p1, setP1] = useState("");
-  const [p2, setP2] = useState("");
-  const [show1, setShow1] = useState(false);
-  const [show2, setShow2] = useState(false);
-  const [err, setErr] = useState("");
-  const nav = useNavigate();
+  const [formData, setFormData] = useState({ first_name: "", last_name: "", email: "", password: "" });
+  const [showPassword, setShowPassword] = useState(false);
+  const navigate = useNavigate();
+  const [error, setError] = useState("");
 
-  const emailOk = EMAIL_RE.test(email) && email.length <= 80;
-  const pwOk = p1.length >= 8 && p1.length <= 64; 
-  const match = p1 === p2;
-  const canSubmit = emailOk && pwOk && match;
-
-  async function onSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
-    setErr("");
-    if (!canSubmit) return;
+    setError("");
     try {
-      // AQUÍ estaba tu fallo: faltaba password2
-      await apiPost("/api/auth/register/", { email, password: p1, password2: p2 });
-      nav("/login");
-    } catch (e) {
-      setErr("No se pudo registrar: " + (e.message || "error"));
+      // Usamos la URL que configuramos en el backend
+      await apiPost("/api/orders/register/", formData);
+      alert("¡Cuenta creada! Ahora inicia sesión.");
+      navigate("/login");
+    } catch (err) {
+      setError("Error: El email ya existe o los datos son inválidos.");
     }
   }
 
   return (
-    <div style={{ maxWidth: 420, margin: "60px auto" }}>
-      <h2>Crear cuenta</h2>
-      <form onSubmit={onSubmit} style={{ display: "grid", gap: 8 }}>
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          maxLength={80}
-          required
-          onChange={(e) => setEmail(e.target.value)}
-        />
-        <div style={{ display: "flex", gap: 8 }}>
-          <input
-            type={show1 ? "text" : "password"}
-            placeholder="Contraseña (8 a 64)"
-            value={p1}
-            minLength={8}
-            maxLength={64}
-            required
-            onChange={(e) => setP1(e.target.value)}
-            style={{ flex: 1 }}
-          />
-          <button type="button" onClick={() => setShow1((s) => !s)}>{show1 ? "Ocultar" : "Ver"}</button>
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "80vh", padding: "40px 0" }}>
+      <h2 style={{ fontWeight: "900", marginBottom: "10px" }}>ÚNETE A GYMSHOP</h2>
+      <p style={{ color: "#666", marginBottom: "30px", fontSize: "14px" }}>Crea tu cuenta para guardar tus favoritos y comprar.</p>
+
+      <form onSubmit={handleSubmit} style={{ width: "100%", maxWidth: "400px", display: "flex", flexDirection: "column", gap: "15px", padding: "0 20px" }}>
+        <div style={{ display: "flex", gap: "10px" }}>
+            <input placeholder="Nombre" onChange={(e) => setFormData({...formData, first_name: e.target.value})} required style={{ padding: "15px", border: "1px solid #ddd", borderRadius: "4px", width: "50%" }} />
+            <input placeholder="Apellidos" onChange={(e) => setFormData({...formData, last_name: e.target.value})} required style={{ padding: "15px", border: "1px solid #ddd", borderRadius: "4px", width: "50%" }} />
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          <input
-            type={show2 ? "text" : "password"}
-            placeholder="Repite la contraseña"
-            value={p2}
-            minLength={8}
-            maxLength={64}
-            required
-            onChange={(e) => setP2(e.target.value)}
-            style={{ flex: 1 }}
-          />
-          <button type="button" onClick={() => setShow2((s) => !s)}>{show2 ? "Ocultar" : "Ver"}</button>
+        
+        <input type="email" placeholder="Email*" onChange={(e) => setFormData({...formData, email: e.target.value})} required style={{ padding: "15px", border: "1px solid #ddd", borderRadius: "4px" }} />
+        
+        <div style={{ position: "relative" }}>
+            <input 
+                type={showPassword ? "text" : "password"} 
+                placeholder="Contraseña*" 
+                onChange={(e) => setFormData({...formData, password: e.target.value})} 
+                required 
+                style={{ padding: "15px", border: "1px solid #ddd", borderRadius: "4px", width: "100%", boxSizing: "border-box" }} 
+            />
+            <div onClick={() => setShowPassword(!showPassword)} style={{ position: "absolute", right: "15px", top: "50%", transform: "translateY(-50%)", cursor: "pointer", color: "#666" }}>
+                {showPassword ? <FiEyeOff size={20} /> : <FiEye size={20} />}
+            </div>
         </div>
 
-        {!emailOk && email.length > 0 && <small style={{ color: "crimson" }}>Email no válido.</small>}
-        {!pwOk && p1.length > 0 && <small style={{ color: "crimson" }}>La contraseña debe tener entre 8 y 64 caracteres.</small>}
-        {!match && p2.length > 0 && <small style={{ color: "crimson" }}>Las contraseñas no coinciden.</small>}
-        {err && <div style={{ color: "crimson" }}>{err}</div>}
+        {error && <p style={{ color: "crimson", textAlign: "center", fontSize: "13px" }}>{error}</p>}
 
-        <button disabled={!canSubmit}>Crear cuenta</button>
+        <button type="submit" style={{ backgroundColor: "#000", color: "#fff", padding: "16px", border: "none", borderRadius: "30px", fontWeight: "900", textTransform: "uppercase", cursor: "pointer", marginTop: "10px" }}>
+          Crear cuenta
+        </button>
       </form>
+      
+      <p style={{ marginTop: "20px", fontSize: "14px" }}>¿Ya tienes cuenta? <Link to="/login" style={{ color: "#000", fontWeight: "700" }}>Inicia sesión</Link></p>
     </div>
   );
 }

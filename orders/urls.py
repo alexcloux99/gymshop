@@ -1,11 +1,10 @@
-# orders/urls.py
 from django.urls import path
 from . import views
 
 urlpatterns = [
-    path('', views.my_orders),
-    path('<int:pk>/', views.order_detail),
-    path('create/', views.create_order),
-    path('checkout/', views.CheckoutAPIView.as_view()),
-    path('<int:pk>/mark-paid/', views.admin_mark_paid),
+    path('register/', views.RegisterView.as_view(), name='register'),
+    path('mine/', views.my_orders, name='my-orders'),
+    path('create/', views.create_order, name='create-order'),
+    path('<int:pk>/', views.order_detail, name='order-detail'),
+    path('<int:pk>/pay/', views.pay_order_paypal, name='pay-order'),
 ]
