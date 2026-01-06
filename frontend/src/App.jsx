@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route, Link, NavLink } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Link, NavLink, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Cart from "./pages/Cart";
@@ -16,17 +17,24 @@ import Favorites from "./pages/Favorites.jsx";
 function Nav() {
   const { user, logout } = useAuth();
   const { items } = useCart();
+  const [q, setQ] = useState("");
+  const navigate = useNavigate();
 
   const linkStyle = ({ isActive }) => ({
     textDecoration: "none",
     color: "#000",
     fontWeight: "800",
-    fontSize: "14px",
+    fontSize: "13px",
     letterSpacing: "0.5px",
     borderBottom: isActive ? "2px solid #000" : "2px solid transparent",
-    paddingBottom: "5px",
-    transition: "0.3s"
+    paddingBottom: "5px"
   });
+
+  const handleSearch = (e) => {
+    if (e.key === "Enter") {
+      navigate(`/?q=${q}`); 
+    }
+  };
 
   return (
     <nav style={{
@@ -45,26 +53,29 @@ function Nav() {
         GYMSHOP
       </Link>
 
-      {/* ICONOS Y BUSCADOR */}
       <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
+        {/* BUSCADOR FUNCIONAL */}
         <div style={{ position: 'relative', display: 'flex', alignItems: 'center', backgroundColor: '#f5f5f5', padding: '8px 15px', borderRadius: '20px' }}>
             <FiSearch size={18} color="#666" />
-            <input placeholder="¿Qué buscas?" style={{ border: 'none', background: 'none', marginLeft: '10px', outline: 'none', fontSize: '13px' }} />
+            <input 
+              placeholder="¿Qué buscas?" 
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              onKeyDown={handleSearch}
+              style={{ border: 'none', background: 'none', marginLeft: '10px', outline: 'none', fontSize: '13px', width: '150px' }} 
+            />
         </div>
 
         <Link to="/favorites" style={{ color: "#000" }}><FiHeart size={22} /></Link>
         <Link to="/orders" style={{ color: "#000" }}><FiUser size={22} /></Link>
-        
         <Link to="/cart" style={{ color: "#000", position: "relative" }}>
           <FiShoppingBag size={22} />
           {items.length > 0 && (
-            <span style={{
-              position: "absolute", top: -8, right: -8, backgroundColor: "#000", color: "#fff",
-              borderRadius: "50%", padding: "2px 6px", fontSize: "10px", fontWeight: "bold"
-            }}>{items.length}</span>
+            <span style={{ position: "absolute", top: -8, right: -8, backgroundColor: "#000", color: "#fff", borderRadius: "50%", padding: "2px 6px", fontSize: "10px", fontWeight: "bold" }}>
+              {items.length}
+            </span>
           )}
         </Link>
-
         {user && <button onClick={logout} style={{background: 'none', border: 'none', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px'}}>SALIR</button>}
       </div>
     </nav>
