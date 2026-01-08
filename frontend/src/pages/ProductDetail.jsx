@@ -14,12 +14,16 @@ export default function ProductDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [selectedSize, setSelectedSize] = useState("");
-  const [review, setReview] = useState({ rating: 5, description: "" });
-
-  useEffect(() => {
-    setLoading(true);
-    setError(false);
   
+  // Estados para las reseñas
+  const [review, setReview] = useState({ rating: 0, description: "" });
+  const [sendingReview, setSendingReview] = useState(false);
+  const [visibleReviews, setVisibleReviews] = useState(2); 
+
+  const [toast, setToast] = useState({ show: false, msg: "" });
+
+  const loadProduct = () => {
+    setLoading(true);
     apiGet(`/api/products/${slug}/`)
       .then((data) => {
         if (data) setP(data);
@@ -27,22 +31,64 @@ export default function ProductDetail() {
       })
       .catch(() => setError(true))
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    loadProduct();
   }, [slug]);
 
-  if (loading) return <p style={{textAlign: 'center', padding: '100px', fontWeight: 'bold'}}>ENTRENANDO... (Cargando producto)</p>;
+  const showNotification = (msg) => {
+    setToast({ show: true, msg });
+    setTimeout(() => setToast({ show: false, msg: "" }), 3000);
+  };
+
+  const handleReviewSubmit = async (e) => {
+    e.preventDefault();
+    if (review.rating === 0) {
+      showNotification("POR FAVOR, ELIGE UNA PUNTUACIÓN");
+      return;
+    }
+    if (!review.description.trim()) {
+      showNotification("ESCRIBE UN COMENTARIO");
+      return;
+    }
+
+    setSendingReview(true);
+    try {
+      await apiPost(`/api/products/review/${p.id}/`, review, token);
+      setReview({ rating: 0, description: "" });
+      const updatedProduct = await apiGet(`/api/products/${slug}/`);
+      setP(updatedProduct);
+      showNotification("¡GRACIAS POR TU OPINIÓN!");
+    } catch (err) {
+      showNotification("ERROR AL ENVIAR");
+    } finally {
+      setSendingReview(false);
+    }
+  };
+
+  if (loading) return <p style={{textAlign: 'center', padding: '100px', fontWeight: 'bold'}}>CARGANDO PRODUCTO...</p>;
   if (error || !p) return <p style={{textAlign: 'center', padding: '100px'}}>No se ha encontrado el artículo.</p>;
 
   const sizes = ["S", "M", "L", "XL"];
+  const showSizeSelector = p.category === 'men' || p.category === 'women' || (p.category === 'accessories' && p.size && p.size !== 'N/A');
 
   return (
-    <div style={{ maxWidth: 1200, margin: "40px auto", padding: "0 20px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "60px" }}>
+    <div style={{ maxWidth: 1200, margin: "40px auto", padding: "0 20px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "60px", fontFamily: "Helvetica, Arial, sans-serif", position: "relative" }}>
       
-      {/* IMAGEN */}
+      {toast.show && (
+        <div style={{
+          position: "fixed", top: "100px", right: "20px",
+          backgroundColor: "#000", color: "#fff", padding: "15px 30px",
+          borderRadius: "4px", fontWeight: "900", zIndex: 9999, fontSize: "12px",
+          boxShadow: "0 4px 15px rgba(0,0,0,0.2)", animation: "slideIn 0.3s ease-out"
+        }}>{toast.msg}</div>
+      )}
+
       <div>
         <img src={absUrl(p.image)} alt={p.name} style={{ width: "100%", backgroundColor: "#f5f5f5" }} />
       </div>
 
-      {/* INFO */}
       <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
         <div style={{ fontSize: "12px", fontWeight: "700", color: "#666", textTransform: "uppercase" }}>
             {p.category === 'men' ? 'Hombre' : p.category === 'women' ? 'Mujer' : 'Accesorios'}
@@ -50,81 +96,110 @@ export default function ProductDetail() {
         <h1 style={{ fontSize: "36px", fontWeight: "900", margin: 0, textTransform: "uppercase" }}>{p.name}</h1>
         <div style={{ fontSize: "24px", fontWeight: "700" }}>{p.price} €</div>
 
-        {/* TALLAS */}
-        {p.category !== "accessories" && (
+        {showSizeSelector && (
           <div style={{ marginTop: "20px" }}>
-            <div style={{ fontWeight: "700", marginBottom: "10px", fontSize: "14px" }}>SELECCIONAR TALLA</div>
+            <div style={{ fontWeight: "700", marginBottom: "12px", fontSize: "13px" }}>SELECCIONAR TALLA</div>
             <div style={{ display: "flex", gap: "10px" }}>
               {sizes.map(size => (
                 <button
                   key={size}
                   onClick={() => setSelectedSize(size)}
                   style={{
-                    width: "60px", height: "45px", 
+                    width: "65px", height: "48px", 
                     border: selectedSize === size ? "2px solid #000" : "1px solid #ddd",
                     backgroundColor: selectedSize === size ? "#000" : "#fff",
                     color: selectedSize === size ? "#fff" : "#000",
-                    fontWeight: "700", cursor: "pointer", transition: "0.2s"
+                    fontWeight: "900", cursor: "pointer", transition: "0.2s"
                   }}
-                >
-                  {size}
-                </button>
+                >{size}</button>
               ))}
             </div>
           </div>
         )}
 
-        {/* BOTÓN CARRITO */}
         <button 
-          onClick={() => add(p, 1)}
+          onClick={() => {
+              if (showSizeSelector && !selectedSize) {
+                showNotification("ELIGE UNA TALLA");
+                return;
+              }
+              add({ ...p, size: selectedSize || "N/A" }, 1);
+              showNotification("AÑADIDO AL CARRITO");
+            }}
           style={{
-            marginTop: "30px", padding: "18px", backgroundColor: "#000", color: "#fff",
-            border: "none", fontWeight: "800", fontSize: "16px", cursor: "pointer",
-            display: "flex", alignItems: "center", justifyContent: "center", gap: "10px"
+            marginTop: "10px", padding: "20px", backgroundColor: "#000", color: "#fff",
+            border: "none", fontWeight: "900", fontSize: "15px", cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: "12px",
+            textTransform: "uppercase"
           }}
         >
-          <FiShoppingBag /> AÑADIR AL CARRITO
+          <FiShoppingBag size={18} /> AÑADIR AL CARRITO
         </button>
 
-        {/* DESCRIPCIÓN */}
         <div style={{ borderTop: "1px solid #eee", marginTop: "30px", paddingTop: "20px" }}>
-          <div style={{ fontWeight: "700", marginBottom: "10px" }}>DESCRIPCIÓN</div>
-          <p style={{ color: "#444", lineHeight: "1.6", fontSize: "15px" }}>{p.description}</p>
+          <div style={{ fontWeight: "900", marginBottom: "12px", fontSize: "14px", textTransform: "uppercase" }}>Descripción</div>
+          <p style={{ color: "#444", lineHeight: "1.7", fontSize: "15px" }}>{p.description}</p>
         </div>
-
-        {/* RESEÑAS */}
         <div style={{ marginTop: "40px" }}>
-          <div style={{ fontWeight: "900", fontSize: "18px", marginBottom: "20px", borderBottom: "2px solid #000", display: "inline-block" }}>RESEÑAS</div>
+          <h2 style={{ fontWeight: "900", fontSize: "20px", marginBottom: "25px", borderBottom: "2px solid #000", display: "inline-block", textTransform: "uppercase" }}>RESEÑAS</h2>
           
-          {p.reviews?.length === 0 ? <p style={{color: '#888'}}>Sé el primero en opinar.</p> : (
-            p.reviews?.map((r, i) => (
-              <div key={i} style={{ marginBottom: "20px", paddingBottom: "15px", borderBottom: "1px solid #f0f0f0" }}>
-                <div style={{ display: "flex", gap: "2px", color: "#000", marginBottom: "5px" }}>
-                  {[...Array(5)].map((_, idx) => (
-                    <FiStar key={idx} fill={idx < r.rating ? "#000" : "none"} size={12} />
-                  ))}
+          {p.reviews?.length === 0 ? <p style={{color: '#888', fontSize: '14px'}}>Aún no hay reseñas.</p> : (
+            <>
+              {p.reviews.slice(0, visibleReviews).map((r, i) => (
+                <div key={i} style={{ marginBottom: "20px", padding: "20px", backgroundColor: "#fafafa", borderRadius: "4px", border: "1px solid #f0f0f0" }}>
+                  <div style={{ display: "flex", gap: "3px", marginBottom: "10px" }}>
+                    {[...Array(5)].map((_, idx) => (
+                      <FiStar key={idx} fill={idx < r.rating ? "#000" : "none"} size={13} color={idx < r.rating ? "#000" : "#ccc"} />
+                    ))}
+                  </div>
+                  <div style={{ fontWeight: "800", fontSize: "14px", marginBottom: "5px", textTransform: "capitalize" }}>
+                      {r.username.split('@')[0]}
+                  </div>
+                  <p style={{ margin: 0, color: "#444", fontSize: "14px", fontStyle: "italic" }}>"{r.description}"</p>
                 </div>
-                <div style={{ fontWeight: "700", fontSize: "14px" }}>{r.username}</div>
-                <p style={{ margin: "5px 0 0 0", color: "#555", fontSize: "14px" }}>{r.description}</p>
-              </div>
-            ))
+              ))}
+
+              {/* Creamos un boton para ver mas reseñas a partir de 2  */}
+              {p.reviews.length > visibleReviews && (
+                <div style={{ textAlign: 'center', marginTop: '20px' }}>
+                    <button 
+                        onClick={() => setVisibleReviews(prev => prev + 4)} 
+                        style={{
+                            backgroundColor: '#fff', color: '#000', border: '2px solid #000',
+                            padding: '12px 30px', borderRadius: '30px', fontWeight: '900',
+                            fontSize: '12px', cursor: 'pointer', textTransform: 'uppercase'
+                        }}
+                    >
+                        Cargar más reseñas
+                    </button>
+                </div>
+              )}
+            </>
           )}
 
           {token && (
-            <div style={{ marginTop: "30px", backgroundColor: "#f9f9f9", padding: "20px" }}>
-              <div style={{ fontWeight: "700", marginBottom: "10px" }}>DEJA TU OPINIÓN</div>
-              <textarea 
-                placeholder="¿Qué tal el producto?"
-                style={{ width: "100%", padding: "10px", border: "1px solid #ddd", minHeight: "80px", marginBottom: "10px" }}
+            <div style={{ marginTop: "30px", backgroundColor: "#f9f9f9", padding: "25px", borderRadius: "4px" }}>
+              <div style={{ fontWeight: "900", marginBottom: "15px", fontSize: "14px", textTransform: "uppercase" }}>Deja tu opinión</div>
+              <div style={{ display: "flex", gap: "8px", marginBottom: "15px" }}>
+                {[1, 2, 3, 4, 5].map((num) => (
+                  <FiStar key={num} size={24} style={{ cursor: "pointer" }} onClick={() => setReview({...review, rating: num})}
+                    fill={num <= review.rating ? "#000" : "none"} color={num <= review.rating ? "#000" : "#ccc"} />
+                ))}
+              </div>
+              <textarea placeholder=" ¿Qué te ha parecido el producto?..." value={review.description} 
+                style={{ width: "100%", padding: "12px", border: "1px solid #ddd", minHeight: "100px", marginBottom: "15px", fontFamily: "inherit", outline: "none" }}
                 onChange={(e) => setReview({...review, description: e.target.value})}
               ></textarea>
-              <button style={{ backgroundColor: "#000", color: "#fff", border: "none", padding: "10px 20px", fontWeight: "700", cursor: "pointer" }}>
-                ENVIAR RESEÑA
+              <button onClick={handleReviewSubmit} disabled={sendingReview}
+                style={{ backgroundColor: "#000", color: "#fff", border: "none", padding: "15px 30px", fontWeight: "900", cursor: "pointer", textTransform: "uppercase", fontSize: "12px" }}
+              >
+                {sendingReview ? "ENVIANDO..." : "Enviar Reseña"}
               </button>
             </div>
           )}
         </div>
       </div>
+      <style>{`@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }`}</style>
     </div>
   );
 }

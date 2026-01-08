@@ -23,18 +23,15 @@ class RegisterSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        email = validated_data["email"].strip().lower()
-        base = slugify(email.split("@")[0]) or "user"
-        username = base
-        i = 1
-        while User.objects.filter(username=username).exists():
-            i += 1
-            username = f"{base}{i}"
-        return User.objects.create_user(
-            username=username,
+        email = validated_data['email'].lower()
+        user = User.objects.create_user(
+            username=email, 
             email=email,
-            password=validated_data["password"]
+            password=validated_data['password'],
+            first_name=validated_data.get('first_name', ''),
+            last_name=validated_data.get('last_name', '')
         )
+        return user
 
 class UserPublicSerializer(serializers.ModelSerializer):
     class Meta:

@@ -1,49 +1,34 @@
-from decimal import Decimal
 from rest_framework import serializers
 from .models import Order, OrderItem
-from products.models import Product
+from products.serializers import ProductSerializer
+from decimal import Decimal
 
-# ---------- OUTPUT ----------
-class OrderItemOutputSerializer(serializers.ModelSerializer):
-    product_name = serializers.ReadOnlyField(source="product.name")
-    image = serializers.SerializerMethodField()
-
+class OrderItemSerializer(serializers.ModelSerializer):
+    product_name = serializers.ReadOnlyField(source='product.name')
     class Meta:
         model = OrderItem
-        fields = ["id", "product", "product_name", "qty", "price", "image"]
-
-    def get_image(self, obj):
-        img = getattr(obj.product, "image", None)
-        if not img:
-            return None
-        req = self.context.get("request")
-        url = img.url
-        return req.build_absolute_uri(url) if req else url
-
+        fields = ['id', 'product_name', 'qty', 'price', 'size'] 
 
 class OrderSerializer(serializers.ModelSerializer):
-    # No dependemos del related_name; lo armamos nosotros
-    items = serializers.SerializerMethodField()
+    items = OrderItemSerializer(many=True, read_only=True)
 
     class Meta:
         model = Order
-        fields = ["id", "status", "subtotal", "shipping", "total", "paid_at", "created_at", "items"]
+        fields = '__all__'
 
-    def get_items(self, obj):
-        qs = OrderItem.objects.filter(order=obj)
-        return OrderItemOutputSerializer(qs, many=True, context=self.context).data
-
-
-# ---------- INPUT (checkout) ----------
 class OrderItemInputSerializer(serializers.Serializer):
     product_id = serializers.IntegerField()
     qty = serializers.IntegerField(min_value=1)
-
+    size = serializers.CharField(required=False, allow_blank=True) 
 
 class CheckoutSerializer(serializers.Serializer):
     items = OrderItemInputSerializer(many=True)
+    address = serializers.CharField(required=False)
+    city = serializers.CharField(required=False)
+    postal_code = serializers.CharField(required=False)
 
     def validate(self, data):
+        from products.models import Product
         ids = [it["product_id"] for it in data["items"]]
         prods = {p.id: p for p in Product.objects.filter(id__in=ids, active=True)}
 
@@ -54,23 +39,35 @@ class CheckoutSerializer(serializers.Serializer):
             if p.stock < it["qty"]:
                 raise serializers.ValidationError(f"Stock insuficiente para {p.name}")
 
-        # guardo para create()
         self._prods = prods
         return data
 
     def create(self, validated_data):
+        from products.models import Product 
         user = self.context["request"].user
-        order = Order.objects.create(user=user, status="pending", total=Decimal("0"))
+        order = Order.objects.create(
+            user=user, 
+            status="pending", 
+            address=validated_data.get('address'),
+            city=validated_data.get('city'),
+            postal_code=validated_data.get('postal_code'),
+            total=Decimal("0")
+        )
         total = Decimal("0")
-
         for it in validated_data["items"]:
             p = self._prods[it["product_id"]]
             qty = it["qty"]
-            OrderItem.objects.create(order=order, product=p, qty=qty, price=p.price)
+            OrderItem.objects.create(
+                order=order, 
+                product=p, 
+                qty=qty, 
+                price=p.price,
+                size=it.get('size', 'N/A') 
+            )
             total += p.price * qty
             p.stock -= qty
-            p.save(update_fields=["stock"])
-
+            p.save()
+            
         order.total = total
-        order.save(update_fields=["total"])
+        order.save()
         return order

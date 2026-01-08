@@ -54,7 +54,6 @@ function Nav() {
       </Link>
 
       <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
-        {/* BUSCADOR FUNCIONAL */}
         <div style={{ position: 'relative', display: 'flex', alignItems: 'center', backgroundColor: '#f5f5f5', padding: '8px 15px', borderRadius: '20px' }}>
             <FiSearch size={18} color="#666" />
             <input 
@@ -84,7 +83,7 @@ function Nav() {
 
 export default function App() {
   return (
-    <PayPalScriptProvider options={{ "client-id": "Ae2acUMOWhIEi73CNDtqiWDDUMJZ_6xjl9xSTRp2yb3jRQKZ8jR0dRVaFD_hLhFj-mgIdxagl27fukIx" }}>
+    <PayPalScriptProvider options={{ "client-id": "Ae2acUMOWhIEi73CNDtqiWDDUMJZ_6xjl9xSTRp2yb3jRQKZ8jR0dRVaFD_hLhFj-mgIdxagl27fukIx", currency: "EUR","disable-funding": "credit,card" }}>
       <AuthProvider>
         <WishlistProvider>
           <CartProvider>

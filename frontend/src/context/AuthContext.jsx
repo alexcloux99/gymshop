@@ -10,7 +10,7 @@ export default function AuthProvider({ children }) {
 
   useEffect(() => {
     if (token) {
-      apiGet("/api/auth/me/", token) 
+      apiGet("/api/auth/me/", token)
         .then(setUser)
         .catch(() => logout())
         .finally(() => setLoading(false));
@@ -26,21 +26,23 @@ export default function AuthProvider({ children }) {
           password: password 
       });
       
-      const newToken = resp.access || resp.token;
-      
-      if (!newToken) throw new Error("No se recibió el token");
-
+      const newToken = resp.access;
       localStorage.setItem("gymshop_token", newToken);
       setToken(newToken);
-    
+      
+      if (resp.refresh) {
+        localStorage.setItem("gymshop_refresh", resp.refresh);
+      }
+      
       const userData = await apiGet("/api/auth/me/", newToken);
       setUser(userData);
       
     } catch (err) {
       console.error("Error en login:", err);
-      throw new Error("Credenciales incorrectas");
+      throw new Error("Credenciales inválidas");
     }
   }
+
   function logout() {
     localStorage.removeItem("gymshop_token");
     setToken(null);
@@ -48,7 +50,7 @@ export default function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, setUser, token, login, logout, loading }}>
       {!loading && children}
     </AuthContext.Provider>
   );

@@ -1,5 +1,4 @@
-export const API_BASE =
-  import.meta.env.VITE_API_BASE || "http://127.0.0.1:8000";
+export const API_BASE = import.meta.env.VITE_API_BASE || "http://127.0.0.1:8000";
 
 export const absUrl = (url) =>
   !url ? "" : (url.startsWith("http") ? url : `${API_BASE}${url.startsWith("/") ? url : `/${url}`}`);
@@ -17,11 +16,11 @@ export async function apiGet(path, token) {
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
   try {
-    return await doFetch(path, { headers, credentials: "omit" });
+    return await doFetch(path, { headers });
   } catch (err) {
     if (err.status === 401 && await tryRefresh()) {
-      const t = localStorage.getItem("access") || "";
-      return await doFetch(path, { headers: { ...headers, Authorization: `Bearer ${t}` }, credentials: "omit" });
+      const t = localStorage.getItem("gymshop_token"); 
+      return await doFetch(path, { headers: { ...headers, Authorization: `Bearer ${t}` } });
     }
     throw err;
   }
@@ -33,19 +32,34 @@ export async function apiPost(path, body, token) {
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
   try {
-    return await doFetch(path, { method: "POST", headers, body: JSON.stringify(body), credentials: "omit" });
+    return await doFetch(path, { method: "POST", headers, body: JSON.stringify(body) });
   } catch (err) {
     if (err.status === 401 && await tryRefresh()) {
-      const t = localStorage.getItem("access") || "";
-      return await doFetch(path, { method: "POST", headers: { ...headers, Authorization: `Bearer ${t}` }, body: JSON.stringify(body), credentials: "omit" });
+      const t = localStorage.getItem("gymshop_token"); 
+      return await doFetch(path, { method: "POST", headers: { ...headers, Authorization: `Bearer ${t}` }, body: JSON.stringify(body) });
     }
-    const txt = await err.text?.().catch(() => "") || "";
-    throw new Error(txt || `${err.status} ${err.statusText || "Error"}`);
+    throw err;
+  }
+}
+
+export async function apiPut(path, body, token) {
+  const headers = {
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+  try {
+    return await doFetch(path, { method: "PUT", headers, body: JSON.stringify(body) });
+  } catch (err) {
+    if (err.status === 401 && await tryRefresh()) {
+      const t = localStorage.getItem("gymshop_token"); 
+      return await doFetch(path, { method: "PUT", headers: { ...headers, Authorization: `Bearer ${t}` }, body: JSON.stringify(body) });
+    }
+    throw err;
   }
 }
 
 async function tryRefresh() {
-  const refresh = localStorage.getItem("refresh");
+  const refresh = localStorage.getItem("gymshop_refresh");
   if (!refresh) return false;
   try {
     const data = await doFetch("/api/auth/token/refresh/", {
@@ -54,15 +68,13 @@ async function tryRefresh() {
       body: JSON.stringify({ refresh }),
     });
     if (data?.access) {
-      localStorage.setItem("access", data.access);
+      localStorage.setItem("gymshop_token", data.access); 
       return true;
     }
     return false;
   } catch {
-    //  fuerzamos login
-    localStorage.removeItem("access");
-    localStorage.removeItem("refresh");
-    localStorage.removeItem("username");
+    localStorage.removeItem("gymshop_token");
+    localStorage.removeItem("gymshop_refresh");
     return false;
   }
 }

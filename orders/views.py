@@ -42,6 +42,7 @@ class RegisterSerializer(ModelSerializer):
 class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
     permission_classes = [permissions.AllowAny]
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 @transaction.atomic
@@ -51,26 +52,40 @@ def create_order(request):
     if not items:
         return Response({'detail': 'Carrito vacío'}, status=400)
 
-    order = Order.objects.create(user=request.user, status="pending", total=0)
+    order = Order.objects.create(
+        user=request.user, 
+        status="pending",
+        address=request.data.get('address_1'),
+        city=request.data.get('city'),
+        postal_code=request.data.get('postal_code')
+    )
     subtotal = 0
 
     for it in items:
-        pid = it.get('product_id') or it.get('product')
+        pid = it.get('product_id') or it.get('product')   
         qty = int(it.get('qty', 1))
-    
+        talla_elegida = it.get('size', 'N/A') 
+
         p = Product.objects.select_for_update().get(pk=pid)
-        
         if p.stock < qty:
-            return Response({'detail': f'Sin stock suficiente para {p.name}'}, status=400)
+            return Response({'detail': f'Sin stock para {p.name}'}, status=400)
         
         p.stock -= qty
         p.save(update_fields=['stock'])
-        
-        OrderItem.objects.create(order=order, product=p, qty=qty, price=p.price)
+
+        # --- Guardamos la talla de anteriores pedidos---
+        OrderItem.objects.create(
+            order=order, 
+            product=p, 
+            qty=qty, 
+            price=p.price,
+            size=talla_elegida 
+        )
         subtotal += p.price * qty
 
     order.total = subtotal
     order.save(update_fields=['total'])
+    
     return Response(OrderSerializer(order).data, status=201)
 
 @api_view(['GET'])
