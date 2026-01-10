@@ -26,7 +26,7 @@ export default function Login() {
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "80vh", backgroundColor: "#fff" }}>
       
       
-      <h2 style={{ fontWeight: "900", letterSpacing: "-1.5px", marginBottom: "10px", fontSize: "32px", fontFamily: "Helvetica, Arial, sans-serif" }}>GYMSHOP LOGIN</h2>
+      <h2 style={{ fontWeight: "900", letterSpacing: "-1.5px", marginBottom: "10px", fontSize: "32px", fontFamily: "Helvetica, Arial, sans-serif" }}>Inicia sesión en tu cuenta</h2>
       
       <p style={{ color: "#666", textAlign: "center", maxWidth: "350px", fontSize: "14px", marginBottom: "35px" }}>
         Compra tus estilos, guarda tus favoritos y entrena con nosotros.
@@ -36,7 +36,7 @@ export default function Login() {
         
         <input
           type="email"
-          placeholder="Email address*"
+          placeholder="Correo electrónico"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
@@ -46,7 +46,7 @@ export default function Login() {
         <div style={{ position: "relative", width: "100%" }}>
           <input
             type={showPassword ? "text" : "password"}
-            placeholder="Password*"
+            placeholder="Contraseña"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
@@ -71,7 +71,7 @@ export default function Login() {
           borderRadius: "40px", fontWeight: "900", fontSize: "16px", cursor: "pointer",
           textTransform: "uppercase", marginTop: "10px", letterSpacing: "1px"
         }}>
-          LOG IN
+          INICIAR SESIÓN
         </button>
       </form>
 

@@ -13,6 +13,13 @@ import ProductDetail from "./pages/ProductDetail.jsx";
 import { PayPalScriptProvider } from "@paypal/react-paypal-js";
 import { FiSearch, FiHeart, FiUser, FiShoppingBag } from "react-icons/fi";
 import Favorites from "./pages/Favorites.jsx";
+import Footer from "./components/Footer.jsx";
+import FAQ from "./pages/FAQ";
+import Shipping from "./pages/Shipping";
+import SizeGuide from "./pages/SizeGuide";
+import ScrollToTop from "./components/ScrollToTop";
+import Forgot from "./pages/Forgot";
+import ResetPassword from "./pages/ResetPassword";
 
 function Nav() {
   const { user, logout } = useAuth();
@@ -88,17 +95,26 @@ export default function App() {
         <WishlistProvider>
           <CartProvider>
             <BrowserRouter>
+              <ScrollToTop />
               <Nav />
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} /> 
-                <Route path="/cart" element={<Cart />} />
-                <Route path="/category/:cat" element={<Home />} /> 
-                <Route path="/orders" element={<RequireAuth><Orders /></RequireAuth>} />
-                <Route path="/product/:slug" element={<ProductDetail />} />
-                <Route path="/favorites" element={<Favorites />} />
-              </Routes>
+              <div style={{ minHeight: "70vh" }}> 
+                <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/register" element={<Register />} /> 
+                  <Route path="/cart" element={<Cart />} />
+                  <Route path="/category/:cat" element={<Home />} /> 
+                  <Route path="/orders" element={<RequireAuth><Orders /></RequireAuth>} />
+                  <Route path="/product/:slug" element={<ProductDetail />} />
+                  <Route path="/favorites" element={<Favorites />} />
+                  <Route path="/faq" element={<FAQ />} />
+                  <Route path="/shipping" element={<Shipping />} />
+                  <Route path="/size-guide" element={<SizeGuide />} />
+                  <Route path="/forgot" element={<Forgot />} />
+                  <Route path="/reset-password/:token" element={<ResetPassword />} />
+                </Routes>
+              </div>
+              <Footer /> 
             </BrowserRouter>
           </CartProvider>
         </WishlistProvider>

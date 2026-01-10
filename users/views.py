@@ -9,6 +9,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from .serializers import RegisterSerializer
 from .models import Profile 
 from django.contrib.auth import authenticate
+from django.core.mail import send_mail
 
 class LoginWithEmailAPIView(APIView):
     permission_classes = [permissions.AllowAny]
@@ -75,6 +76,39 @@ def update_profile(request):
     p.save()
     
     return Response({"status": "ok"})
+# Recuperación de contraseña
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+def forgot_password(request):
+    """ Busca el usuario y "enviamos" el correo con el link """
+    email = request.data.get('email', '').strip().lower()
+    try:
+        user = User.objects.get(email__iexact=email)
+        subject = 'Recuperar contraseña'
+        message = f'Hola {user.first_name or user.username},\n\n' \
+                  f'Has solicitado restablecer tu contraseña.\n' \
+                  f'Haz clic en el siguiente enlace para elegir una nueva contraseña:\n' \
+                  f'http://localhost:5173/reset-password/simulacion-token-123\n\n' \
+                  f'Si no has sido tú, ignora este mensaje.'
+        
+        send_mail(subject, message, 'soporte@gymshop.com', [email])
+        return Response({"status": "ok", "message": "Email enviado correctamente"})
+    except User.DoesNotExist:
+        return Response({"detail": "Email no encontrado"}, status=404)
+# Cambia la contraseña del usuario
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+def reset_password_confirm(request):
+    email = request.data.get('email', '').strip().lower()
+    new_password = request.data.get('password')
+    
+    try:
+        user = User.objects.get(email__iexact=email)
+        user.set_password(new_password)
+        user.save()
+        return Response({"status": "ok", "message": "Contraseña cambiada con éxito"})
+    except User.DoesNotExist:
+        return Response({"detail": "Error al procesar la solicitud."}, status=400)
 
 class LogoutView(APIView):
     permission_classes = [permissions.IsAuthenticated]

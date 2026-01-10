@@ -13,6 +13,7 @@ from rest_framework.validators import UniqueValidator
 from rest_framework.decorators import api_view, permission_classes
 from django.utils import timezone
 from decimal import Decimal
+from django.core.mail import send_mail
 
 User = get_user_model()
 
@@ -122,13 +123,29 @@ def pay_order_paypal(request, pk):
 
     order.status = "paid"
     order.paid_at = timezone.now()
-    
-    payment_id = request.data.get('id') 
-    if payment_id:
-        pass
-
     order.save()
-    return Response({"status": "ok", "message": "Pago confirmado en GymShop"})
+    try:
+        subject = f'Confirmación de pedido GYMSHOP #{order.id}'
+        message = f'Hola {order.user.first_name or "cliente"},\n\n' \
+                  f'¡Gracias por tu compra en GYMSHOP!\n' \
+                  f'Hemos recibido tu pago correctamente para el pedido #{order.id}.\n' \
+                  f'Total: {order.total} €\n\n' \
+                  f'Dirección de envío:\n' \
+                  f'{order.address_1}\n' \
+                  f'{order.postal_code}, {order.city}\n\n' \
+                  f'En breve recibirás un número de seguimiento. ¡Gracias :)!'
+        
+        send_mail(
+            subject,
+            message,
+            'soporte@gymshop.com',
+            [order.user.email],
+            fail_silently=False,
+        )
+    except Exception as e:
+        print(f"Error enviando email: {e}")
+
+    return Response({"status": "ok", "message": "Pago confirmado y email enviado"})
 
 @api_view(['POST'])
 @permission_classes([IsAdminUser])

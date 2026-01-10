@@ -10,7 +10,6 @@ export default function Cart() {
   const [err, setErr] = useState("");
   const [orderId, setOrderId] = useState(null);
   const [busy, setBusy] = useState(false);
-  
   const [isSuccess, setIsSuccess] = useState(false);
   const [finalOrderNum, setFinalOrderNum] = useState(null);
 
@@ -19,6 +18,8 @@ export default function Cart() {
     first_name: "", last_name: "", address_1: "", address_2: "",
     city: "", state: "", postal_code: "", phone: "", country: "España"
   });
+  const shippingCost = total >= 50 ? 0 : 4.99;
+  const finalTotal = total + shippingCost;
 
   useEffect(() => {
     if (user && !isAddingNew) {
@@ -31,6 +32,7 @@ export default function Cart() {
     }
   }, [user, isAddingNew]);
 
+  // Paypal - CREAR PEDIDO
   async function createOrder() {
     setErr(""); setBusy(true);
     try {
@@ -40,6 +42,7 @@ export default function Cart() {
 
       const body = { 
         items: items.map(it => ({ product_id: it.id, qty: it.qty, size: it.size })), 
+        total: finalTotal.toFixed(2),
         ...shipData 
       };
       const order = await apiPost("/api/orders/create/", body, token); 
@@ -49,6 +52,7 @@ export default function Cart() {
     finally { setBusy(false); }
   }
 
+  // Pago PayPal - CONFIRMAR PAGO
   async function onPayPalSuccess(details, data, id) {
     try {
       setBusy(true);
@@ -60,11 +64,13 @@ export default function Cart() {
     finally { setBusy(false); }
   }
 
+  // PAGO CONTRAREEMBOLSO
   async function handleContrareembolso() {
     setErr(""); setBusy(true);
     try {
       const body = { 
         items: items.map(it => ({ product_id: it.id, qty: it.qty, size: it.size })), 
+        total: finalTotal.toFixed(2),
         ...shipData, 
         payment_method: "contrareembolso" 
       };
@@ -85,6 +91,7 @@ export default function Cart() {
         <h1 style={{ fontWeight: '900', fontSize: '32px', marginBottom: '10px' }}>¡PEDIDO RECIBIDO!</h1>
         <p style={{ color: '#666', fontSize: '16px', marginBottom: '40px', lineHeight: '1.6' }}>
           Tu número de pedido es <strong>#{finalOrderNum}</strong>.<br />
+          Te enviaremos un email cuando el paquete salga del almacén.
         </p>
         <button onClick={() => window.location.href = '/'} style={{ backgroundColor: '#000', color: '#fff', padding: '15px 40px', border: 'none', fontWeight: '900', cursor: 'pointer', textTransform: 'uppercase', borderRadius: '2px' }}>
           Volver a la tienda
@@ -126,11 +133,9 @@ export default function Cart() {
               </div>
             ))}
           </div>
-
           <div style={{ alignSelf: "start" }}>
             <div style={{ backgroundColor: "#f9f9f9", padding: "25px", borderRadius: "2px" }}>
               <h2 style={{ fontSize: "15px", fontWeight: "900", marginBottom: "20px" }}>RESUMEN</h2>
-              
               <div style={{ marginBottom: "20px", border: "1px solid #eee", padding: "15px", backgroundColor: "#fff" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
                     <span style={{ fontSize: "11px", fontWeight: "900" }}>ENTREGA EN:</span>
@@ -154,7 +159,7 @@ export default function Cart() {
                         <InputS placeholder="Apellidos" value={shipData.last_name} onChange={e => setShipData({...shipData, last_name: e.target.value})} />
                     </div>
                     <InputS placeholder="Dirección Línea 1" value={shipData.address_1} onChange={e => setShipData({...shipData, address_1: e.target.value})} />
-                    <InputS placeholder="Dirección Línea 2 (Opcional)" value={shipData.address_2} onChange={e => setShipData({...shipData, address_2: e.target.value})} />
+                    <InputS placeholder="Dirección Línea 2" value={shipData.address_2} onChange={e => setShipData({...shipData, address_2: e.target.value})} />
                     <div style={{ display: "flex", gap: "5px" }}>
                         <InputS placeholder="Ciudad" value={shipData.city} onChange={e => setShipData({...shipData, city: e.target.value})} />
                         <InputS placeholder="CP" value={shipData.postal_code} onChange={e => setShipData({...shipData, postal_code: e.target.value})} />
@@ -166,15 +171,26 @@ export default function Cart() {
               </div>
 
               <div style={{ borderTop: "1px solid #ddd", paddingTop: "15px", marginTop: "15px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "900", fontSize: "16px", marginBottom: "25px" }}>
-                  <span>TOTAL</span>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "14px", marginBottom: "10px" }}>
+                  <span>SUBTOTAL</span>
                   <span>{total.toFixed(2)} €</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "14px", marginBottom: "10px" }}>
+                  <span>ENVÍO</span>
+                  <span style={{ color: shippingCost === 0 ? "#2e7d32" : "#000", fontWeight: "bold" }}>
+                    {shippingCost === 0 ? "GRATIS" : `${shippingCost.toFixed(2)} €`}
+                  </span>
+                </div>
+
+                <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "900", fontSize: "18px", marginTop: "20px", marginBottom: "25px", borderTop: "2px solid #000", paddingTop: "15px" }}>
+                  <span>TOTAL</span>
+                  <span>{finalTotal.toFixed(2)} €</span>
                 </div>
 
                 {!orderId ? (
                   <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                     <button onClick={createOrder} disabled={busy} style={{ width: "100%", padding: "15px", backgroundColor: "#000", color: "#fff", border: "none", fontWeight: "900", cursor: "pointer", textTransform: "uppercase", fontSize: "13px" }}>
-                      {busy ? "PROCESANDO..." : "Confirmar y pagar con PayPal"}
+                      {busy ? "CREANDO PEDIDO..." : "Confirmar y pagar"}
                     </button>
                     <button onClick={handleContrareembolso} disabled={busy} style={{ width: "100%", padding: "14px", backgroundColor: "#fff", color: "#000", border: "2px solid #000", fontWeight: "900", cursor: "pointer", textTransform: "uppercase", fontSize: "13px" }}>
                       Pago Contrareembolso
@@ -182,10 +198,10 @@ export default function Cart() {
                   </div>
                 ) : (
                   <div style={{ animation: "fadeIn 0.5s" }}>
-                    <p style={{ fontSize: "11px", fontWeight: "bold", textAlign: "center", marginBottom: "10px", color: "#2e7d32" }}>✓ PEDIDO LISTO. COMPLETA EL PAGO:</p>
+                    <p style={{ fontSize: "11px", fontWeight: "bold", textAlign: "center", marginBottom: "10px", color: "#2e7d32" }}>✓ PEDIDO LISTO PARA PAYPAL:</p>
                     <PayPalButtons 
-                      style={{ layout: "vertical", shape: "rect" }}
-                      createOrder={(data, actions) => actions.order.create({ purchase_units: [{ amount: { value: total.toFixed(2) } }] })}
+                      style={{ layout: "vertical", shape: "rect", label: "paypal" }}
+                      createOrder={(data, actions) => actions.order.create({ purchase_units: [{ amount: { value: finalTotal.toFixed(2) } }] })}
                       onApprove={(data, actions) => actions.order.capture().then(details => onPayPalSuccess(details, data, orderId))}
                     />
                     <button onClick={() => setOrderId(null)} style={{ background: "none", border: "none", color: "#888", width: "100%", marginTop: "10px", fontSize: "11px", cursor: "pointer", textDecoration: "underline" }}>Cambiar método de pago</button>
