@@ -12,6 +12,7 @@ from django.contrib.auth import get_user_model
 from rest_framework.validators import UniqueValidator
 from rest_framework.decorators import api_view, permission_classes
 from django.utils import timezone
+from decimal import Decimal
 
 User = get_user_model()
 
@@ -32,7 +33,7 @@ class RegisterSerializer(ModelSerializer):
     def create(self, validated_data):
         email = validated_data["email"].strip().lower()
         return User.objects.create_user(
-            username=email,
+            username=email, # Usamos el email como username para el login
             email=email,
             password=validated_data["password"],
             first_name=validated_data.get("first_name", ""),
@@ -55,25 +56,33 @@ def create_order(request):
     order = Order.objects.create(
         user=request.user, 
         status="pending",
-        address=request.data.get('address_1'),
+        first_name=request.data.get('first_name'),
+        last_name=request.data.get('last_name'),
+        address_1=request.data.get('address_1'),
+        address_2=request.data.get('address_2'),
         city=request.data.get('city'),
-        postal_code=request.data.get('postal_code')
+        state=request.data.get('state'),
+        postal_code=request.data.get('postal_code'),
+        phone=request.data.get('phone'),
+        payment_method=request.data.get('payment_method', 'paypal')
     )
-    subtotal = 0
+    
+    total_acumulado = Decimal('0.00')
 
     for it in items:
         pid = it.get('product_id') or it.get('product')   
         qty = int(it.get('qty', 1))
         talla_elegida = it.get('size', 'N/A') 
 
+        # Buscamos el producto y bloqueamos la fila para el stock
         p = Product.objects.select_for_update().get(pk=pid)
+        
         if p.stock < qty:
-            return Response({'detail': f'Sin stock para {p.name}'}, status=400)
+            return Response({'detail': f'Sin stock suficiente para {p.name}'}, status=400)
         
         p.stock -= qty
         p.save(update_fields=['stock'])
 
-        # --- Guardamos la talla de anteriores pedidos---
         OrderItem.objects.create(
             order=order, 
             product=p, 
@@ -81,9 +90,9 @@ def create_order(request):
             price=p.price,
             size=talla_elegida 
         )
-        subtotal += p.price * qty
+        total_acumulado += p.price * qty
 
-    order.total = subtotal
+    order.total = total_acumulado
     order.save(update_fields=['total'])
     
     return Response(OrderSerializer(order).data, status=201)
@@ -91,7 +100,7 @@ def create_order(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def my_orders(request):
-    """ Lista de pedidos del usuario logueado """
+    """ Lista de pedidos del usuario"""
     qs = Order.objects.filter(user=request.user).order_by('-created_at')
     ser = OrderSerializer(qs, many=True)
     return Response(ser.data)
@@ -99,28 +108,21 @@ def my_orders(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def order_detail(request, pk):
-    """ Detalle de un pedido específico """
+    """ Detalle de los pedidos del usuario"""
     o = get_object_or_404(Order, pk=pk, user=request.user)
     return Response(OrderSerializer(o).data)
-
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def pay_order_paypal(request, pk):
-    """ 
-    El Frontend llama aquí tras el éxito de PayPal.
-    Recibe el ID del pedido y lo marca como pagado.
-    """
     order = get_object_or_404(Order, pk=pk, user=request.user)
     
     if order.status == "paid":
         return Response({"detail": "El pedido ya está pagado."}, status=400)
 
-    # Actualizamos el pedido a pagado
     order.status = "paid"
     order.paid_at = timezone.now()
     
-    # Guardamos el ID de paypal 
     payment_id = request.data.get('id') 
     if payment_id:
         pass

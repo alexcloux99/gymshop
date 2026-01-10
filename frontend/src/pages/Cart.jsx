@@ -35,9 +35,13 @@ export default function Cart() {
     setErr(""); setBusy(true);
     try {
       if (!token) throw new Error("Inicia sesión para comprar.");
+      if (!items.length) throw new Error("El carrito está vacío.");
       if (!shipData.address_1 || !shipData.city || !shipData.phone) throw new Error("Faltan datos de envío.");
 
-      const body = { items: items.map(it => ({ product_id: it.id, qty: it.qty, size: it.size })), ...shipData };
+      const body = { 
+        items: items.map(it => ({ product_id: it.id, qty: it.qty, size: it.size })), 
+        ...shipData 
+      };
       const order = await apiPost("/api/orders/create/", body, token); 
       setOrderId(order.id);
       return order;
@@ -59,7 +63,11 @@ export default function Cart() {
   async function handleContrareembolso() {
     setErr(""); setBusy(true);
     try {
-      const body = { items: items.map(it => ({ product_id: it.id, qty: it.qty, size: it.size })), ...shipData, payment_method: "contrareembolso" };
+      const body = { 
+        items: items.map(it => ({ product_id: it.id, qty: it.qty, size: it.size })), 
+        ...shipData, 
+        payment_method: "contrareembolso" 
+      };
       const order = await apiPost("/api/orders/create/", body, token); 
       setFinalOrderNum(order.id);
       setIsSuccess(true);
@@ -78,10 +86,7 @@ export default function Cart() {
         <p style={{ color: '#666', fontSize: '16px', marginBottom: '40px', lineHeight: '1.6' }}>
           Tu número de pedido es <strong>#{finalOrderNum}</strong>.<br />
         </p>
-        <button 
-          onClick={() => window.location.href = '/'} 
-          style={{ backgroundColor: '#000', color: '#fff', padding: '15px 40px', border: 'none', fontWeight: '900', cursor: 'pointer', textTransform: 'uppercase', borderRadius: '2px' }}
-        >
+        <button onClick={() => window.location.href = '/'} style={{ backgroundColor: '#000', color: '#fff', padding: '15px 40px', border: 'none', fontWeight: '900', cursor: 'pointer', textTransform: 'uppercase', borderRadius: '2px' }}>
           Volver a la tienda
         </button>
       </div>
@@ -99,10 +104,9 @@ export default function Cart() {
         </div>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 400px", gap: "50px" }}>
-          
           <div>
             {items.map(it => (
-              <div key={it.id + it.size} style={{ display: "flex", gap: "20px", padding: "20px 0", borderBottom: "1px solid #eee" }}>
+              <div key={it.id + (it.size || "")} style={{ display: "flex", gap: "20px", padding: "20px 0", borderBottom: "1px solid #eee" }}>
                 <img src={it.image} alt={it.name} style={{ width: "90px", height: "110px", objectFit: "cover", backgroundColor: "#f5f5f5" }} />
                 <div style={{ flex: 1 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "800", fontSize: "13px" }}>
@@ -170,14 +174,15 @@ export default function Cart() {
                 {!orderId ? (
                   <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                     <button onClick={createOrder} disabled={busy} style={{ width: "100%", padding: "15px", backgroundColor: "#000", color: "#fff", border: "none", fontWeight: "900", cursor: "pointer", textTransform: "uppercase", fontSize: "13px" }}>
-                      {busy ? "CREANDO PEDIDO..." : "Confirmar y pagar con PayPal"}
+                      {busy ? "PROCESANDO..." : "Confirmar y pagar con PayPal"}
                     </button>
                     <button onClick={handleContrareembolso} disabled={busy} style={{ width: "100%", padding: "14px", backgroundColor: "#fff", color: "#000", border: "2px solid #000", fontWeight: "900", cursor: "pointer", textTransform: "uppercase", fontSize: "13px" }}>
                       Pago Contrareembolso
                     </button>
                   </div>
                 ) : (
-                  <div>
+                  <div style={{ animation: "fadeIn 0.5s" }}>
+                    <p style={{ fontSize: "11px", fontWeight: "bold", textAlign: "center", marginBottom: "10px", color: "#2e7d32" }}>✓ PEDIDO LISTO. COMPLETA EL PAGO:</p>
                     <PayPalButtons 
                       style={{ layout: "vertical", shape: "rect" }}
                       createOrder={(data, actions) => actions.order.create({ purchase_units: [{ amount: { value: total.toFixed(2) } }] })}
@@ -192,6 +197,7 @@ export default function Cart() {
           </div>
         </div>
       )}
+      <style>{`@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }`}</style>
     </div>
   );
 }
