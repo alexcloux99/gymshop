@@ -67,11 +67,13 @@ export default function ProductDetail() {
     }
   };
 
-  if (loading) return <p style={{textAlign: 'center', padding: '100px', fontWeight: 'bold'}}>CARGANDO PRODUCTO...</p>;
+  if (loading) return <p style={{textAlign: 'center', padding: '100px', fontWeight: 'bold'}}>... (Cargando producto)</p>;
   if (error || !p) return <p style={{textAlign: 'center', padding: '100px'}}>No se ha encontrado el artículo.</p>;
-
   const sizes = ["S", "M", "L", "XL"];
-  const showSizeSelector = p.category === 'men' || p.category === 'women' || (p.category === 'accessories' && p.size && p.size !== 'N/A');
+  const selectedVariant = p.variants?.find(v => v.size === selectedSize);
+  const currentStock = selectedVariant ? selectedVariant.stock : 0;
+  
+  const showSizeSelector = p.category === 'men' || p.category === 'women' || (p.category === 'accessories' && p.variants?.length > 0 && p.variants[0].size !== 'N/A');
 
   return (
     <div style={{ maxWidth: 1200, margin: "40px auto", padding: "0 20px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "60px", fontFamily: "Helvetica, Arial, sans-serif", position: "relative" }}>
@@ -95,24 +97,54 @@ export default function ProductDetail() {
         </div>
         <h1 style={{ fontSize: "36px", fontWeight: "900", margin: 0, textTransform: "uppercase" }}>{p.name}</h1>
         <div style={{ fontSize: "24px", fontWeight: "700" }}>{p.price} €</div>
+        {selectedSize && (currentStock === 0 || currentStock < 10) && (  // Mostrar mensaje de ultimas unidades a partir de 10 unidades en stock
+          <div style={{ marginTop: "10px", animation: "fadeIn 0.3s ease" }}>
+            {currentStock === 0 ? (
+              <span style={{ color: "#d32f2f", fontWeight: "800", fontSize: "11px", textTransform: "uppercase" }}>
+                ● Agotado: Talla {selectedSize} no disponible
+              </span>
+            ) : (
+              <span style={{ color: "#000", backgroundColor: "#ccff00", padding: "4px 10px", fontWeight: "900", fontSize: "10px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                ¡Últimas unidades disponibles!
+              </span>
+            )}
+          </div>
+        )}
 
+        {/* SELECCIONAR TALLA */}
         {showSizeSelector && (
-          <div style={{ marginTop: "20px" }}>
-            <div style={{ fontWeight: "700", marginBottom: "12px", fontSize: "13px" }}>SELECCIONAR TALLA</div>
+          <div style={{ marginTop: "15px" }}>
+            <div style={{ fontWeight: "700", marginBottom: "12px", fontSize: "13px", letterSpacing: "0.5px" }}>
+              SELECCIONAR TALLA
+            </div>
             <div style={{ display: "flex", gap: "10px" }}>
-              {sizes.map(size => (
-                <button
-                  key={size}
-                  onClick={() => setSelectedSize(size)}
-                  style={{
-                    width: "65px", height: "48px", 
-                    border: selectedSize === size ? "2px solid #000" : "1px solid #ddd",
-                    backgroundColor: selectedSize === size ? "#000" : "#fff",
-                    color: selectedSize === size ? "#fff" : "#000",
-                    fontWeight: "900", cursor: "pointer", transition: "0.2s"
-                  }}
-                >{size}</button>
-              ))}
+              {sizes.map(size => {
+                const variant = p.variants?.find(v => v.size === size);
+                const hasStock = variant ? variant.stock > 0 : false;
+
+                return (
+                  <button
+                    key={size}
+                    onClick={() => setSelectedSize(size)}
+                    style={{
+                      width: "65px", height: "48px", 
+                      border: selectedSize === size ? "2px solid #000" : "1px solid #ddd",
+                      backgroundColor: selectedSize === size ? "#000" : "#fff",
+                      color: selectedSize === size ? "#fff" : (!hasStock ? "#ccc" : "#000"),
+                      fontWeight: "900", cursor: "pointer", transition: "0.2s",
+                      position: 'relative', overflow: 'hidden'
+                    }}
+                  >
+                    {size}
+                    {!hasStock && (
+                      <div style={{ 
+                        position: 'absolute', top: '50%', left: 0, width: '100%', 
+                        height: '1px', backgroundColor: '#ccc', transform: 'rotate(-45deg)' 
+                      }}></div>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}
@@ -123,23 +155,31 @@ export default function ProductDetail() {
                 showNotification("ELIGE UNA TALLA");
                 return;
               }
+              if (selectedSize && currentStock === 0) {
+                showNotification("TALLA AGOTADA");
+                return;
+              }
               add({ ...p, size: selectedSize || "N/A" }, 1);
               showNotification("AÑADIDO AL CARRITO");
             }}
+          disabled={showSizeSelector && selectedSize && currentStock === 0}
           style={{
-            marginTop: "10px", padding: "20px", backgroundColor: "#000", color: "#fff",
-            border: "none", fontWeight: "900", fontSize: "15px", cursor: "pointer",
+            marginTop: "10px", padding: "20px", 
+            backgroundColor: (selectedSize && currentStock === 0) ? "#666" : "#000", 
+            color: "#fff", border: "none", fontWeight: "900", fontSize: "15px", 
+            cursor: (selectedSize && currentStock === 0) ? "not-allowed" : "pointer",
             display: "flex", alignItems: "center", justifyContent: "center", gap: "12px",
             textTransform: "uppercase"
           }}
         >
-          <FiShoppingBag size={18} /> AÑADIR AL CARRITO
+          {(selectedSize && currentStock === 0) ? "TALLA AGOTADA" : <><FiShoppingBag size={18} /> AÑADIR AL CARRITO</>}
         </button>
 
         <div style={{ borderTop: "1px solid #eee", marginTop: "30px", paddingTop: "20px" }}>
           <div style={{ fontWeight: "900", marginBottom: "12px", fontSize: "14px", textTransform: "uppercase" }}>Descripción</div>
           <p style={{ color: "#444", lineHeight: "1.7", fontSize: "15px" }}>{p.description}</p>
         </div>
+
         <div style={{ marginTop: "40px" }}>
           <h2 style={{ fontWeight: "900", fontSize: "20px", marginBottom: "25px", borderBottom: "2px solid #000", display: "inline-block", textTransform: "uppercase" }}>RESEÑAS</h2>
           

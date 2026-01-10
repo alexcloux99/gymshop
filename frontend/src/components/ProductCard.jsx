@@ -9,6 +9,8 @@ export default function ProductCard({ p }) {
   const { toggleWishlist, isFavorite } = useWishlist();
   
   const fav = isFavorite(p.id);
+  const isOutOfStock = p.stock === 0;
+  const isLowStock = p.stock > 0 && p.stock < 10;
 
   return (
     <div style={{ 
@@ -17,6 +19,12 @@ export default function ProductCard({ p }) {
       transition: "transform 0.2s" 
     }}>
       
+      {isOutOfStock ? (
+        <div style={{ position: 'absolute', top: '10px', left: '10px', backgroundColor: '#000', color: '#fff', padding: '5px 10px', fontSize: '10px', fontWeight: '900', zIndex: 10 }}>AGOTADO</div>
+      ) : isLowStock ? (
+        <div style={{ position: 'absolute', top: '10px', left: '10px', backgroundColor: '#ccff00', color: '#000', padding: '5px 10px', fontSize: '10px', fontWeight: '900', zIndex: 10 }}>ÚLTIMAS UNIDADES</div>
+      ) : null}
+
       {/* boton de favoritos */}
       <div 
         onClick={() => toggleWishlist(p)}
@@ -42,7 +50,6 @@ export default function ProductCard({ p }) {
         />
       </div>
 
-      {/* IMAGEN DEL PRODUCTO */}
       <Link to={`/product/${p.slug || p.id}`} style={{ textDecoration: "none" }}>
         {p.image ? (
           <img 
@@ -52,7 +59,8 @@ export default function ProductCard({ p }) {
               width: "100%", 
               aspectRatio: "3/4",
               objectFit: "cover", 
-              backgroundColor: "#f5f5f5" 
+              backgroundColor: "#f5f5f5",
+              filter: isOutOfStock ? "grayscale(1) opacity(0.7)" : "none" // si está agotado, poner en escala de grises
             }} 
           />
         ) : (
@@ -93,21 +101,22 @@ export default function ProductCard({ p }) {
 
         <button 
           onClick={() => add(p, 1)} 
+          disabled={isOutOfStock}
           style={{ 
             width: "100%",
             padding: "10px", 
-            backgroundColor: "#000", 
+            backgroundColor: isOutOfStock ? "#ccc" : "#000", 
             color: "#fff",
             border: "none",
             fontWeight: "700",
             fontSize: "12px",
             textTransform: "uppercase",
-            cursor: "pointer",
+            cursor: isOutOfStock ? "not-allowed" : "pointer",
             marginTop: "5px",
             borderRadius: "2px"
           }}
         >
-          Añadir al carrito
+          {isOutOfStock ? "SIN STOCK" : "Añadir al carrito"}
         </button>
       </div>
     </div>

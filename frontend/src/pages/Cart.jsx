@@ -10,6 +10,7 @@ export default function Cart() {
   const [err, setErr] = useState("");
   const [orderId, setOrderId] = useState(null);
   const [busy, setBusy] = useState(false);
+  
   const [isSuccess, setIsSuccess] = useState(false);
   const [finalOrderNum, setFinalOrderNum] = useState(null);
 
@@ -31,13 +32,14 @@ export default function Cart() {
       });
     }
   }, [user, isAddingNew]);
+  const hasStockError = items.some(it => it.stock === 0);
 
   // Paypal - CREAR PEDIDO
   async function createOrder() {
     setErr(""); setBusy(true);
     try {
       if (!token) throw new Error("Inicia sesión para comprar.");
-      if (!items.length) throw new Error("El carrito está vacío.");
+      if (hasStockError) throw new Error("Hay artículos agotados en tu bolsa. Quítalos para continuar.");
       if (!shipData.address_1 || !shipData.city || !shipData.phone) throw new Error("Faltan datos de envío.");
 
       const body = { 
@@ -68,6 +70,7 @@ export default function Cart() {
   async function handleContrareembolso() {
     setErr(""); setBusy(true);
     try {
+      if (hasStockError) throw new Error("No hay stock suficiente.");
       const body = { 
         items: items.map(it => ({ product_id: it.id, qty: it.qty, size: it.size })), 
         total: finalTotal.toFixed(2),
@@ -113,19 +116,19 @@ export default function Cart() {
         <div style={{ display: "grid", gridTemplateColumns: "1fr 400px", gap: "50px" }}>
           <div>
             {items.map(it => (
-              <div key={it.id + (it.size || "")} style={{ display: "flex", gap: "20px", padding: "20px 0", borderBottom: "1px solid #eee" }}>
+              <div key={it.id + (it.size || "")} style={{ display: "flex", gap: "20px", padding: "20px 0", borderBottom: "1px solid #eee", opacity: it.stock === 0 ? 0.5 : 1 }}>
                 <img src={it.image} alt={it.name} style={{ width: "90px", height: "110px", objectFit: "cover", backgroundColor: "#f5f5f5" }} />
                 <div style={{ flex: 1 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "800", fontSize: "13px" }}>
-                    <span>{it.name.toUpperCase()}</span>
+                    <span>{it.name.toUpperCase()} {it.stock === 0 && <span style={{color: 'red'}}>(AGOTADO)</span>}</span>
                     <span>{it.price} €</span>
                   </div>
                   <div style={{ fontSize: "12px", color: "#666", marginTop: "4px" }}>Talla: {it.size || "N/A"}</div>
                   <div style={{ display: "flex", alignItems: "center", gap: "15px", marginTop: "15px" }}>
                     <div style={{ border: "1px solid #ddd", display: "flex", alignItems: "center" }}>
-                      <button onClick={() => dec(it.id)} style={{ padding: "4px 10px", border: "none", background: "none", cursor: "pointer" }}>-</button>
+                      <button onClick={() => dec(it.id)} disabled={it.stock === 0} style={{ padding: "4px 10px", border: "none", background: "none", cursor: "pointer" }}>-</button>
                       <span style={{ fontSize: "12px", fontWeight: "bold" }}>{it.qty}</span>
-                      <button onClick={() => inc(it.id)} style={{ padding: "4px 10px", border: "none", background: "none", cursor: "pointer" }}>+</button>
+                      <button onClick={() => inc(it.id)} disabled={it.stock === 0} style={{ padding: "4px 10px", border: "none", background: "none", cursor: "pointer" }}>+</button>
                     </div>
                     <button onClick={() => remove(it.id)} style={{ background: "none", border: "none", textDecoration: "underline", fontSize: "11px", cursor: "pointer", color: "#666" }}>Quitar</button>
                   </div>
@@ -133,6 +136,7 @@ export default function Cart() {
               </div>
             ))}
           </div>
+
           <div style={{ alignSelf: "start" }}>
             <div style={{ backgroundColor: "#f9f9f9", padding: "25px", borderRadius: "2px" }}>
               <h2 style={{ fontSize: "15px", fontWeight: "900", marginBottom: "20px" }}>RESUMEN</h2>
@@ -159,7 +163,7 @@ export default function Cart() {
                         <InputS placeholder="Apellidos" value={shipData.last_name} onChange={e => setShipData({...shipData, last_name: e.target.value})} />
                     </div>
                     <InputS placeholder="Dirección Línea 1" value={shipData.address_1} onChange={e => setShipData({...shipData, address_1: e.target.value})} />
-                    <InputS placeholder="Dirección Línea 2" value={shipData.address_2} onChange={e => setShipData({...shipData, address_2: e.target.value})} />
+                    <InputS placeholder="Dirección Línea 2 (Opcional)" value={shipData.address_2} onChange={e => setShipData({...shipData, address_2: e.target.value})} />
                     <div style={{ display: "flex", gap: "5px" }}>
                         <InputS placeholder="Ciudad" value={shipData.city} onChange={e => setShipData({...shipData, city: e.target.value})} />
                         <InputS placeholder="CP" value={shipData.postal_code} onChange={e => setShipData({...shipData, postal_code: e.target.value})} />
@@ -187,12 +191,19 @@ export default function Cart() {
                   <span>{finalTotal.toFixed(2)} €</span>
                 </div>
 
+                {/* Stock */}
+                {hasStockError && (
+                    <p style={{ color: 'red', fontWeight: 'bold', fontSize: '11px', textAlign: 'center', marginBottom: '10px' }}>
+                        Artículos agotados en tu bolsa. Por favor, quítalos para continuar.
+                    </p>
+                )}
+
                 {!orderId ? (
                   <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                    <button onClick={createOrder} disabled={busy} style={{ width: "100%", padding: "15px", backgroundColor: "#000", color: "#fff", border: "none", fontWeight: "900", cursor: "pointer", textTransform: "uppercase", fontSize: "13px" }}>
-                      {busy ? "CREANDO PEDIDO..." : "Confirmar y pagar"}
+                    <button onClick={createOrder} disabled={busy || hasStockError} style={{ width: "100%", padding: "15px", backgroundColor: hasStockError ? "#666" : "#000", color: "#fff", border: "none", fontWeight: "900", cursor: hasStockError ? "not-allowed" : "pointer", textTransform: "uppercase", fontSize: "13px" }}>
+                      {busy ? "CREANDO PEDIDO..." : hasStockError ? "ERROR DE STOCK" : "Confirmar y pagar"}
                     </button>
-                    <button onClick={handleContrareembolso} disabled={busy} style={{ width: "100%", padding: "14px", backgroundColor: "#fff", color: "#000", border: "2px solid #000", fontWeight: "900", cursor: "pointer", textTransform: "uppercase", fontSize: "13px" }}>
+                    <button onClick={handleContrareembolso} disabled={busy || hasStockError} style={{ width: "100%", padding: "14px", backgroundColor: "#fff", color: "#000", border: "2px solid #000", fontWeight: "900", cursor: hasStockError ? "not-allowed" : "pointer", textTransform: "uppercase", fontSize: "13px" }}>
                       Pago Contrareembolso
                     </button>
                   </div>

@@ -1,7 +1,7 @@
 from django.db.models import Avg
 from django.db.utils import OperationalError, ProgrammingError
 from rest_framework import serializers
-from .models import Product, Reviews
+from .models import Product, Reviews, ProductVariant
 
 class ReviewSerializer(serializers.ModelSerializer):
     username = serializers.ReadOnlyField(source="user.email")
@@ -9,6 +9,10 @@ class ReviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Reviews
         fields = ["id", "rating", "description", "created", "username"]
+class ProductVariantSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductVariant
+        fields = ["id", "size", "stock"]
 
 class ProductSerializer(serializers.ModelSerializer):
     image = serializers.SerializerMethodField()
@@ -16,13 +20,14 @@ class ProductSerializer(serializers.ModelSerializer):
     rating = serializers.SerializerMethodField()
     num_reviews = serializers.SerializerMethodField()
     reviews = ReviewSerializer(many=True, read_only=True)
+    variants = ProductVariantSerializer(many=True, read_only=True)
 
     class Meta:
         model = Product
         fields = [
             "id", "slug", "name", "image", "category", "description",
-            "price", "stock", "size", "created", "rating", "num_reviews", "reviews",
-        ] 
+            "price", "variants", "created", "rating", "num_reviews", "reviews",
+        ]
 
     def get_image(self, obj):
         img = getattr(obj, "image", None)
