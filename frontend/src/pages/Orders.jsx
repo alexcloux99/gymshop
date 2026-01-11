@@ -144,8 +144,8 @@ export default function Orders() {
               <InputField label="Apellidos" value={formData.last_name} onChange={e => setFormData({...formData, last_name: e.target.value})} />
             </div>
 
-            <InputField label="Dirección Línea 1" value={formData.address_1} onChange={e => setFormData({...formData, address_1: e.target.value})} placeholder="Calle y número" />
-            <InputField label="Dirección Línea 2 (Opcional)" value={formData.address_2} onChange={e => setFormData({...formData, address_2: e.target.value})} placeholder="Bloque, puerta, oficina..." />
+            <InputField label="Dirección" value={formData.address_1} onChange={e => setFormData({...formData, address_1: e.target.value})} placeholder="Calle y número" />
+            <InputField label="Dirección Complementaria (Opcional)" value={formData.address_2} onChange={e => setFormData({...formData, address_2: e.target.value})} placeholder="Bloque, puerta, oficina..." />
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px" }}>
               <InputField label="Ciudad" value={formData.city} onChange={e => setFormData({...formData, city: e.target.value})} />

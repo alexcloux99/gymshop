@@ -162,8 +162,8 @@ export default function Cart() {
                         <InputS placeholder="Nombre" value={shipData.first_name} onChange={e => setShipData({...shipData, first_name: e.target.value})} />
                         <InputS placeholder="Apellidos" value={shipData.last_name} onChange={e => setShipData({...shipData, last_name: e.target.value})} />
                     </div>
-                    <InputS placeholder="Dirección Línea 1" value={shipData.address_1} onChange={e => setShipData({...shipData, address_1: e.target.value})} />
-                    <InputS placeholder="Dirección Línea 2 (Opcional)" value={shipData.address_2} onChange={e => setShipData({...shipData, address_2: e.target.value})} />
+                    <InputS placeholder="Dirección" value={shipData.address_1} onChange={e => setShipData({...shipData, address_1: e.target.value})} />
+                    <InputS placeholder="Dirección Complementaria (Opcional)" value={shipData.address_2} onChange={e => setShipData({...shipData, address_2: e.target.value})} />
                     <div style={{ display: "flex", gap: "5px" }}>
                         <InputS placeholder="Ciudad" value={shipData.city} onChange={e => setShipData({...shipData, city: e.target.value})} />
                         <InputS placeholder="CP" value={shipData.postal_code} onChange={e => setShipData({...shipData, postal_code: e.target.value})} />

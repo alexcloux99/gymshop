@@ -13,7 +13,7 @@ export default function Forgot() {
     setMsg(""); setErr(""); setBusy(true);
     try {
       await apiPost("/api/auth/forgot-password/", { email });
-      setMsg("TE HEMOS ENVIADO UN EMAIL CON LAS INSTRUCCIONES.");
+      setMsg("TE HEMOS ENVIADO UN EMAIL PARA RECUPERAR TU CONTRASEÑA.");
     } catch (e) {
       setErr("NO SE HA ENCONTRADO NINGUNA CUENTA CON ESE EMAIL.");
     } finally { setBusy(false); }
@@ -23,13 +23,13 @@ export default function Forgot() {
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "70vh", padding: "0 20px" }}>
       <h2 style={{ fontWeight: "900", textTransform: "uppercase", marginBottom: "10px" }}>¿Has olvidado tu contraseña?</h2>
       <p style={{ color: "#666", textAlign: "center", maxWidth: "400px", fontSize: "14px", marginBottom: "30px" }}>
-        Introduce tu email abajo y te enviaremos instrucciones para restablecerla.
+        Introduce tu email abajo y te enviaremos un email para restablecerla.
       </p>
 
       <form onSubmit={handleSubmit} style={{ width: "100%", maxWidth: "400px", display: "flex", flexDirection: "column", gap: "15px" }}>
         <input 
           type="email" 
-          placeholder="Email address*" 
+          placeholder="Correo electrónico*" 
           required 
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -40,7 +40,7 @@ export default function Forgot() {
         {err && <p style={{ color: "#d32f2f", fontSize: "13px", fontWeight: "bold", textAlign: "center" }}>{err}</p>}
 
         <button disabled={busy} type="submit" style={{ backgroundColor: "#000", color: "#fff", padding: "16px", border: "none", borderRadius: "30px", fontWeight: "900", cursor: "pointer", textTransform: "uppercase" }}>
-          {busy ? "Enviando..." : "Enviar Instrucciones"}
+          {busy ? "Enviando..." : "Enviar"}
         </button>
       </form>
 
