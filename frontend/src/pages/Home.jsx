@@ -29,7 +29,7 @@ export default function Home() {
   return (
     <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "40px 20px" }}>
       <h2 style={{ fontSize: '24px', fontWeight: '900', marginBottom: '30px', textTransform: 'uppercase' }}>
-          {query ? `Resultados para: ${query}` : (cat ? (cat === 'men' ? 'Hombre' : cat === 'women' ? 'Mujer' : 'Accesorios') : 'Novedades')}
+          {query ? `Resultados para: ${query}` : (cat ? (cat === 'men' ? 'Hombre' : cat === 'women' ? 'Mujer' : 'Accesorios') : 'Todos los Productos')}
       </h2>
 
       {loading ? (
