@@ -4,10 +4,11 @@ import { useAuth } from "../context/AuthContext";
 
 const PROVINCIAS_ESPANA = ["Álava", "Albacete", "Alicante", "Almería", "Asturias", "Ávila", "Badajoz", "Barcelona", "Burgos", "Cáceres", "Cádiz", "Cantabria", "Castellón", "Ciudad Real", "Córdoba", "Cuenca", "Girona", "Granada", "Guadalajara", "Guipúzcoa", "Huelva", "Huesca", "Islas Baleares", "Jaén", "La Coruña", "La Rioja", "Las Palmas", "León", "Lleida", "Lugo", "Madrid", "Málaga", "Murcia", "Navarra", "Orense", "Palencia", "Pontevedra", "Salamanca", "Santa Cruz de Tenerife", "Segovia", "Sevilla", "Soria", "Tarragona", "Teruel", "Toledo", "Valencia", "Valladolid", "Vizcaya", "Zamora", "Zaragoza", "Ceuta", "Melilla"];
 
-const InputField = ({ label, value, onChange, placeholder }) => (
+const InputField = ({ label, value, onChange, placeholder, type = "text" }) => (
   <div style={{ marginBottom: "15px" }}>
     <label style={{ display: "block", fontSize: "11px", fontWeight: "800", marginBottom: "5px", color: "#000" }}>{label.toUpperCase()}</label>
     <input 
+      type={type}
       placeholder={placeholder}
       value={value || ""} 
       onChange={onChange} 
@@ -80,40 +81,29 @@ export default function Orders() {
             <div>
               <h2 style={{ fontSize: 14, fontWeight: 900, borderBottom: "2px solid #000", paddingBottom: 10, marginBottom: 20 }}>HISTORIAL DE PEDIDOS</h2>
               {orders.length === 0 ? <p style={{color: '#666'}}>No hay pedidos registrados.</p> : orders.map(o => (
-                <div key={o.id} style={{ border: "1px solid #eee", padding: "20px", marginBottom: "15px", position: "relative" }}>
+                <div key={o.id} style={{ border: "1px solid #eee", padding: 20, marginBottom: 15 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div>
                       <div style={{ fontWeight: 900, fontSize: "14px" }}>PEDIDO #{o.id} — {Number(o.total).toFixed(2)} €</div>
-                      <div style={{ fontSize: 11, color: "#aaa", fontWeight: "700", marginTop: "4px" }}>{new Date(o.created_at).toLocaleDateString()}</div>
+                      <div style={{ fontSize: 12, color: "#666", marginTop: "4px" }}>{new Date(o.created_at).toLocaleDateString()}</div>
                     </div>
-                    <button 
-                      onClick={() => setSelectedOrder(selectedOrder === o.id ? null : o.id)} 
-                      style={{ cursor: "pointer", background: "none", border: "1px solid #000", padding: "7px 15px", fontWeight: "900", fontSize: "10px", textTransform: "uppercase" }}
-                    >
-                      {selectedOrder === o.id ? "Ocultar" : "Ver Productos"}
+                    <button onClick={() => setSelectedOrder(selectedOrder === o.id ? null : o.id)} style={{ cursor: "pointer", background: "none", border: "1px solid #000", padding: "6px 12px", fontWeight: "900", fontSize: "10px" }}>
+                      {selectedOrder === o.id ? "OCULTAR" : "VER PRODUCTOS"}
                     </button>
                   </div>
 
                   {selectedOrder === o.id && (
-                    <div style={{ marginTop: "20px", borderTop: "1px solid #f5f5f5", paddingTop: "20px", animation: "fadeIn 0.3s ease" }}>
+                    <div style={{ marginTop: 20, borderTop: "1px solid #f5f5f5", paddingTop: 15 }}>
                       {o.items?.map((item, idx) => (
-                        <div key={idx} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px", backgroundColor: "#fafafa", padding: "12px 15px", borderRadius: "2px" }}>
-                          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                            <span style={{ fontWeight: "800", fontSize: "12px", textTransform: "uppercase" }}>{item.product_name}</span>
-                            <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-                                {item.size && item.size !== 'N/A' && (
-                                    <span style={{ fontSize: "10px", fontWeight: "900", backgroundColor: "#000", color: "#fff", padding: "2px 6px", borderRadius: "2px" }}>TALLA {item.size.toUpperCase()}</span>
-                                )}
-                                <span style={{ fontSize: "11px", color: "#666", fontWeight: "700" }}>CANTIDAD: {item.qty}</span>
-                            </div>
-                          </div>
-                          <span style={{ fontWeight: "900", fontSize: "14px" }}>{Number(item.price).toFixed(2)} €</span>
+                        <div key={idx} style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontSize: "13px" }}>
+                          <span>
+                            {item.product_name} 
+                            {item.size && item.size !== 'N/A' && <strong style={{color: '#666'}}> [{item.product.size}]</strong>}
+                            <strong> (x{item.qty})</strong>
+                          </span>
+                          <span>{Number(item.price).toFixed(2)} €</span>
                         </div>
                       ))}
-                      <div style={{ textAlign: "right", marginTop: "15px", borderTop: "2px solid #000", paddingTop: "10px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <span style={{ fontSize: "10px", fontWeight: "900", color: "#aaa" }}>TOTAL DEL PEDIDO</span>
-                        <span style={{ fontSize: "18px", fontWeight: "900" }}>{Number(o.total).toFixed(2)} €</span>
-                      </div>
                     </div>
                   )}
                 </div>
@@ -124,28 +114,28 @@ export default function Orders() {
               <h2 style={{ fontSize: 14, fontWeight: 900, marginBottom: 20 }}>DIRECCIÓN DE ENVÍO</h2>
               <p style={{ fontSize: "14px", lineHeight: "1.8", color: "#333", margin: 0 }}>
                 <strong>{(user?.first_name || "").toUpperCase()} {(user?.last_name || "").toUpperCase()}</strong><br />
-                {user?.address_1}<br />
+                {user?.address_1 || "Sin dirección"}<br />
                 {user?.address_2 && <>{user.address_2}<br /></>}
                 {user?.postal_code} {user?.city}<br />
-                {user?.state}, España<br />
-                Tel: {user?.phone}
+                {user?.state && <>{user.state}, </>}{user?.country || "España"}<br />
+                {user?.phone && <>Tel: {user.phone}</>}
               </p>
-              <button onClick={startEditing} style={{ marginTop: 25, width: "100%", padding: 15, backgroundColor: "#000", color: "#fff", border: "none", fontWeight: "900", cursor: "pointer", fontSize: "11px", textTransform: "uppercase", letterSpacing: "1px" }}>
+              <button onClick={startEditing} style={{ marginTop: 25, width: "100%", padding: 15, backgroundColor: "#000", color: "#fff", border: "none", fontWeight: "900", cursor: "pointer", fontSize: "11px", textTransform: "uppercase" }}>
                 Editar Detalles
               </button>
             </div>
           </>
         ) : (
           <div style={{ maxWidth: "600px", margin: "0 auto", width: "100%" }}>
-            <h2 style={{ fontSize: 22, fontWeight: 900, marginBottom: 35, textAlign: 'center', letterSpacing: "-0.5px" }}>DETALLES DE ENVÍO</h2>
+            <h2 style={{ fontSize: 22, fontWeight: 900, marginBottom: 30, textAlign: 'center' }}>DETALLES DE ENVÍO</h2>
             
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px" }}>
               <InputField label="Nombre" value={formData.first_name} onChange={e => setFormData({...formData, first_name: e.target.value})} />
               <InputField label="Apellidos" value={formData.last_name} onChange={e => setFormData({...formData, last_name: e.target.value})} />
             </div>
 
-            <InputField label="Dirección" value={formData.address_1} onChange={e => setFormData({...formData, address_1: e.target.value})} placeholder="Calle y número" />
-            <InputField label="Dirección Complementaria (Opcional)" value={formData.address_2} onChange={e => setFormData({...formData, address_2: e.target.value})} placeholder="Bloque, puerta, oficina..." />
+            <InputField label="Dirección Línea 1" value={formData.address_1} onChange={e => setFormData({...formData, address_1: e.target.value})} placeholder="Calle y número" />
+            <InputField label="Dirección Línea 2 (Opcional)" value={formData.address_2} onChange={e => setFormData({...formData, address_2: e.target.value})} placeholder="Bloque, puerta, oficina..." />
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px" }}>
               <InputField label="Ciudad" value={formData.city} onChange={e => setFormData({...formData, city: e.target.value})} />
@@ -153,8 +143,24 @@ export default function Orders() {
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px" }}>
-              <InputField label="Código Postal" value={formData.postal_code} onChange={e => setFormData({...formData, postal_code: e.target.value})} />
-              <InputField label="Teléfono" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
+              <InputField 
+                label="Código Postal" 
+                type="tel"
+                value={formData.postal_code} 
+                onChange={e => {
+                    const val = e.target.value.replace(/\D/g, ""); 
+                    if (val.length <= 5) setFormData({...formData, postal_code: val});
+                }} 
+              />
+              <InputField 
+                label="Teléfono" 
+                type="tel"
+                value={formData.phone} 
+                onChange={e => {
+                    const val = e.target.value.replace(/\D/g, ""); 
+                    if (val.length <= 9) setFormData({...formData, phone: val});
+                }} 
+              />
             </div>
 
             <div style={{ marginTop: 40, display: "flex", gap: 20 }}>
