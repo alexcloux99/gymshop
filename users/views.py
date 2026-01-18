@@ -66,6 +66,9 @@ def update_profile(request):
     u = request.user
     p, _ = Profile.objects.get_or_create(user=u)
     d = request.data
+    u.first_name = d.get('first_name', u.first_name)
+    u.last_name = d.get('last_name', u.last_name)
+    u.save()
     p.phone = d.get('phone', p.phone)
     p.address_1 = d.get('address_1', p.address_1)
     p.address_2 = d.get('address_2', p.address_2)
@@ -91,7 +94,7 @@ def forgot_password(request):
                   f'http://localhost:5173/reset-password/simulacion-token-123\n\n' \
                   f'Si no has sido tú, ignora este mensaje.'
         
-        send_mail(subject, message, 'soporte@gymshop.com', [email])
+        send_mail(subject, message, 'soporte@amcfit.com', [email])
         return Response({"status": "ok", "message": "Email enviado correctamente"})
     except User.DoesNotExist:
         return Response({"detail": "Email no encontrado"}, status=404)

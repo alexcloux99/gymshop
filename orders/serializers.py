@@ -5,9 +5,10 @@ from decimal import Decimal
 
 class OrderItemSerializer(serializers.ModelSerializer):
     product_name = serializers.ReadOnlyField(source='product.name')
+    product_image = serializers.ImageField(source='product.image', read_only=True)
     class Meta:
         model = OrderItem
-        fields = ['id', 'product_name', 'qty', 'price', 'size'] 
+        fields = ['id', 'product_name', 'product_image', 'qty', 'price', 'size'] 
 
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True, read_only=True)

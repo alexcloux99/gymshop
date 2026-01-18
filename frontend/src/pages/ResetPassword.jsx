@@ -9,7 +9,7 @@ export default function ResetPassword() {
   const [busy, setBusy] = useState(false);
   const navigate = useNavigate();
   const [toast, setToast] = useState({ show: false, msg: "", type: "success" });
-  const [showPassword, setShowPassword] = useState(false); // Estado para mostrar/ocultar clave
+  const [showPassword, setShowPassword] = useState(false);
 
   const showNotification = (msg, type = "success") => {
     setToast({ show: true, msg, type });
@@ -45,8 +45,6 @@ export default function ResetPassword() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "70vh", padding: "0 20px", position: "relative", fontFamily: "Helvetica, Arial, sans-serif" }}>
-      
-      {/* NOTIFICACIÓN ESTILO GYMSHARK */}
       {toast.show && (
         <div style={{
           position: "fixed", top: "100px", right: "20px",

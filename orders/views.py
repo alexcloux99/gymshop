@@ -135,13 +135,13 @@ def create_order(request):
         print(f"DIRECCIÓN: {order.address_1}, {order.city}")
         print("="*50 + "\n")
         try:
-            subject = f'Confirmación de pedido GYMSHOP #{order.id} (Contra-reembolso)'
+            subject = f'Confirmación de pedido AMC FIT #{order.id} (Contra-reembolso)'
             message = f'Hola {order.user.first_name or "cliente"},\n\n' \
                       f'Hemos recibido tu pedido por Contra-reembolso correctamente.\n' \
                       f'Número de pedido: #{order.id}\n' \
                       f'Pagarás un total de {order.total} € al recibir el paquete en tu domicilio.\n\n' \
-                      f'¡Gracias por confiar en GYMSHOP!'
-            send_mail(subject, message, 'soporte@gymshop.com', [order.user.email])
+                      f'¡Gracias por confiar en AMC FIT!'
+            send_mail(subject, message, 'soporte@amcfit.com', [order.user.email])
         except Exception as e:
             print(f"Error enviando email contra-reembolso: {e}")
     
@@ -180,13 +180,13 @@ def pay_order_paypal(request, pk):
     print("*"*50 + "\n")
 
     try:
-        subject = f'Confirmación de pago GYMSHOP #{order.id}'
+        subject = f'Confirmación de pago AMC FIT #{order.id}'
         message = f'Hola {order.user.first_name or "cliente"},\n\n' \
-                  f'¡Gracias por tu compra en GYMSHOP!\n' \
+                  f'¡Gracias por tu compra en AMC FIT!\n' \
                   f'Hemos recibido tu pago correctamente para el pedido #{order.id}.\n' \
                   f'Total: {order.total} €\n\n' \
                   f'En breve recibirás un número de seguimiento. ¡Gracias :)!'
-        send_mail(subject, message, 'soporte@gymshop.com', [order.user.email])
+        send_mail(subject, message, 'soporte@amcfit.com', [order.user.email])
     except Exception as e:
         print(f"Error enviando email PayPal: {e}")
 
@@ -199,13 +199,13 @@ def forgot_password(request):
     email = request.data.get('email', '').strip().lower()
     try:
         user = User.objects.get(email__iexact=email)
-        subject = 'Recuperar contraseña - GYMSHOP'
+        subject = 'Recuperar contraseña - AMC FIT'
         message = f'Hola {user.first_name or user.username},\n\n' \
-                  f'Has solicitado restablecer tu contraseña en GYMSHOP.\n' \
+                  f'Has solicitado restablecer tu contraseña en AMC FIT.\n' \
                   f'Haz clic en el siguiente enlace para elegir una nueva password:\n' \
                   f'http://localhost:5173/reset-password/simulacion-token-123\n\n' \
                   f'Si no has sido tú, ignora este mensaje.'
-        send_mail(subject, message, 'soporte@gymshop.com', [email])
+        send_mail(subject, message, 'soporte@amcfit.com', [email])
         return Response({"status": "ok"})
     except User.DoesNotExist:
         return Response({"detail": "Email no encontrado"}, status=404)

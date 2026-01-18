@@ -1,83 +1,70 @@
 import { useCart } from "../context/CartContext.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
-import { apiPost } from "../api/client.js";
+import { apiPost, apiPut, apiGet } from "../api/client.js";
 import { useState, useEffect } from "react";
 import { PayPalButtons } from "@paypal/react-paypal-js";
 
-const InputS = (p) => (
-  <input 
-    {...p} 
-    style={{ 
-      width: "100%", padding: "10px", border: "1px solid #ddd", 
-      marginBottom: "10px", fontSize: "13px", boxSizing: "border-box", 
-      outline: "none" 
-    }} 
-  />
+const PROVINCIAS = ["Álava", "Albacete", "Alicante", "Almería", "Asturias", "Ávila", "Badajoz", "Barcelona", "Burgos", "Cáceres", "Cádiz", "Cantabria", "Castellón", "Ciudad Real", "Córdoba", "Cuenca", "Girona", "Granada", "Guadalajara", "Guipúzcoa", "Huelva", "Huesca", "Islas Baleares", "Jaén", "La Coruña", "La Rioja", "Las Palmas", "León", "Lleida", "Lugo", "Madrid", "Málaga", "Murcia", "Navarra", "Orense", "Palencia", "Pontevedra", "Salamanca", "Santa Cruz de Tenerife", "Segovia", "Sevilla", "Soria", "Tarragona", "Teruel", "Toledo", "Valencia", "Valladolid", "Vizcaya", "Zamora", "Zaragoza", "Ceuta", "Melilla"];
+
+const InputCart = ({ placeholder, value, onChange, error, type = "text", width = "100%" }) => (
+  <div style={{ width, marginBottom: "12px" }}>
+    <input type={type} placeholder={placeholder} value={value || ""} onChange={onChange}
+      style={{ width: "100%", padding: "10px", border: error ? "1.5px solid #d00" : "1px solid #ddd", fontSize: "13px", boxSizing: "border-box", outline: "none", borderRadius: "2px", textTransform: 'capitalize' }} 
+    />
+  </div>
 );
 
 export default function Cart() {
   const { items, remove, clear, total, inc, dec } = useCart();
-  const { token, user } = useAuth();
+  const { token, user, setUser } = useAuth();
   const [err, setErr] = useState("");
   const [orderId, setOrderId] = useState(null);
   const [busy, setBusy] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [finalOrderNum, setFinalOrderNum] = useState(null);
   const [isAddingNew, setIsAddingNew] = useState(false);
+
   const [shipData, setShipData] = useState({
     first_name: "", last_name: "", address_1: "", address_2: "",
     city: "", state: "", postal_code: "", phone: "", country: "España"
   });
-  // Calculamos gastos de envío
+
   const shippingCost = total >= 50 ? 0 : 4.99;
   const finalTotal = total + shippingCost;
-
 
   useEffect(() => {
     if (user) {
       setShipData({
-        first_name: user.first_name || "",
-        last_name: user.last_name || "",
-        address_1: user.address_1 || "",
-        address_2: user.address_2 || "",
-        city: user.city || "",
-        state: user.state || "",
-        postal_code: user.postal_code || "",
-        phone: user.phone || "",
-        country: "España"
+        first_name: user.first_name || "", last_name: user.last_name || "",
+        address_1: user.address_1 || "", address_2: user.address_2 || "",
+        city: user.city || "", state: user.state || "",
+        postal_code: user.postal_code || "", phone: user.phone || "", country: "España"
       });
       if (!user.address_1) setIsAddingNew(true);
     }
   }, [user]);
 
-  const handleConfirmAddress = () => {
-    if (!shipData.address_1 || !shipData.city || !shipData.phone || !shipData.first_name || !shipData.postal_code) {
-      setErr("POR FAVOR, COMPLETA LOS CAMPOS OBLIGATORIOS");
+  const handleConfirmAddress = async () => {
+    if (!shipData.address_1 || !shipData.city || !shipData.phone || !shipData.first_name || !shipData.state) {
+      setErr("COMPLETA LOS CAMPOS OBLIGATORIOS");
       return;
     }
-    if (shipData.postal_code.length < 5) {
-      setErr("EL CÓDIGO POSTAL DEBE TENER 5 DÍGITOS");
-      return;
-    }
-    if (shipData.phone.length < 9) {
-      setErr("EL TELÉFONO DEBE TENER AL MENOS 9 DÍGITOS");
-      return;
-    }
-    setErr("");
-    setIsAddingNew(false); 
+    setBusy(true);
+    try {
+      // Sincronizamos con el perfil de "Mi Cuenta"
+      await apiPut("/api/auth/profile/update/", shipData, token);
+      const newData = await apiGet("/api/auth/me/", token);
+      setUser(newData);
+      setErr("");
+      setIsAddingNew(false);
+    } catch (e) { setErr("ERROR AL GUARDAR PERFIL"); }
+    finally { setBusy(false); }
   };
 
   async function createOrder() {
     setErr(""); setBusy(true);
     try {
-      if (!token) throw new Error("Inicia sesión para comprar.");
-      if (!items.length) throw new Error("El carrito está vacío.");
-      
-      const body = { 
-        items: items.map(it => ({ product_id: it.id, qty: it.qty, size: it.size })), 
-        total: finalTotal.toFixed(2),
-        ...shipData 
-      };
+      const body = { items: items.map(it => ({ product_id: it.id, qty: it.qty, size: it.size })), total: finalTotal.toFixed(2), ...shipData };
       const order = await apiPost("/api/orders/create/", body, token); 
       setOrderId(order.id);
       return order;
@@ -90,7 +77,7 @@ export default function Cart() {
       setBusy(true);
       await apiPost(`/api/orders/${id}/pay/`, { id: details.id }, token);
       setFinalOrderNum(id);
-      setIsSuccess(true); 
+      setIsSuccess(true);
       clear(); 
     } catch (e) { setErr("Error al confirmar pago."); }
     finally { setBusy(false); }
@@ -99,12 +86,7 @@ export default function Cart() {
   async function handleContrareembolso() {
     setErr(""); setBusy(true);
     try {
-      const body = { 
-        items: items.map(it => ({ product_id: it.id, qty: it.qty, size: it.size })), 
-        total: finalTotal.toFixed(2),
-        ...shipData, 
-        payment_method: "contrareembolso" 
-      };
+      const body = { items: items.map(it => ({ product_id: it.id, qty: it.qty, size: it.size })), total: finalTotal.toFixed(2), ...shipData, payment_method: "contrareembolso" };
       const order = await apiPost("/api/orders/create/", body, token); 
       setFinalOrderNum(order.id);
       setIsSuccess(true);
@@ -115,15 +97,11 @@ export default function Cart() {
 
   if (isSuccess) {
     return (
-      <div style={{ textAlign: 'center', padding: '100px 20px', fontFamily: 'Helvetica, Arial, sans-serif' }}>
-        <div style={{ fontSize: '80px', color: '#000', marginBottom: '20px' }}>✓</div>
-        <h1 style={{ fontWeight: '900', fontSize: '32px', marginBottom: '10px' }}>¡PEDIDO RECIBIDO!</h1>
-        <p style={{ color: '#666', fontSize: '16px', marginBottom: '40px', lineHeight: '1.6' }}>
-          Tu número de pedido es <strong>#{finalOrderNum}</strong>.<br />
-        </p>
-        <button onClick={() => window.location.href = '/'} style={{ backgroundColor: '#000', color: '#fff', padding: '15px 40px', border: 'none', fontWeight: '900', cursor: 'pointer', textTransform: 'uppercase', borderRadius: '2px' }}>
-          Volver a la tienda
-        </button>
+      <div style={{ textAlign: 'center', padding: '100px 20px', fontFamily: 'Helvetica' }}>
+        <div style={{ fontSize: '80px', marginBottom: '20px' }}>✓</div>
+        <h1 style={{ fontWeight: '900' }}>¡PEDIDO RECIBIDO!</h1>
+        <p>Tu número de pedido es <strong>#{finalOrderNum}</strong>.</p>
+        <button onClick={() => window.location.href = '/'} style={{ backgroundColor: '#000', color: '#fff', padding: '15px 40px', border: 'none', fontWeight: '900', cursor: 'pointer', marginTop: '20px' }}>VOLVER A LA TIENDA</button>
       </div>
     );
   }
@@ -131,15 +109,13 @@ export default function Cart() {
   return (
     <div style={{ maxWidth: "1100px", margin: "40px auto", padding: "0 20px", fontFamily: "Helvetica, Arial, sans-serif" }}>
       <h1 style={{ fontWeight: 900, textTransform: "uppercase", fontSize: "24px", marginBottom: "30px" }}>Tu Carrito</h1>
-      
       {!items.length ? (
         <div style={{ textAlign: "center", padding: "50px" }}>
-            <p style={{ color: "#666", marginBottom: "20px" }}>Tu bolsa está vacía.</p>
-            <button onClick={() => window.location.href='/'} style={{ backgroundColor: "#000", color: "#fff", padding: "12px 25px", border: "none", fontWeight: "bold", cursor: "pointer" }}>VOLVER A LA TIENDA</button>
+            <p>Tu bolsa está vacía.</p>
+            <button onClick={() => window.location.href='/'} style={{ backgroundColor: "#000", color: "#fff", padding: "12px 25px", border: "none", fontWeight: "bold", cursor: "pointer", marginTop: '20px' }}>VOLVER A LA TIENDA</button>
         </div>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 400px", gap: "50px" }}>
-          
           <div>
             {items.map(it => (
               <div key={it.id + (it.size || "")} style={{ display: "flex", gap: "20px", padding: "20px 0", borderBottom: "1px solid #eee" }}>
@@ -166,19 +142,13 @@ export default function Cart() {
           <div style={{ alignSelf: "start" }}>
             <div style={{ backgroundColor: "#f9f9f9", padding: "25px", borderRadius: "2px" }}>
               <h2 style={{ fontSize: "15px", fontWeight: "900", marginBottom: "20px" }}>RESUMEN</h2>
-              
               <div style={{ marginBottom: "20px", border: "1px solid #eee", padding: "15px", backgroundColor: "#fff" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
                     <span style={{ fontSize: "11px", fontWeight: "900" }}>ENTREGA EN:</span>
-                    {!isAddingNew && (
-                      <button onClick={() => setIsAddingNew(true)} style={{ background: "none", border: "none", textDecoration: "underline", fontSize: "11px", cursor: "pointer", fontWeight: "bold" }}>
-                        CAMBIAR
-                      </button>
-                    )}
+                    {!isAddingNew && <button onClick={() => setIsAddingNew(true)} style={{ background: "none", border: "none", textDecoration: "underline", fontSize: "11px", cursor: "pointer", fontWeight: "bold" }}>CAMBIAR</button>}
                 </div>
-
                 {!isAddingNew ? (
-                  <div style={{ fontSize: "13px", lineHeight: "1.5", color: "#333" }}>
+                  <div style={{ fontSize: "13px", lineHeight: "1.5", color: "#333", textTransform: 'capitalize' }}>
                     <strong>{shipData.first_name} {shipData.last_name}</strong><br />
                     {shipData.address_1} {shipData.address_2}<br />
                     {shipData.postal_code}, {shipData.city}<br />
@@ -188,98 +158,42 @@ export default function Cart() {
                 ) : (
                   <div style={{ marginTop: "10px" }}>
                     <div style={{ display: "flex", gap: "5px" }}>
-                        <InputS placeholder="Nombre" value={shipData.first_name} onChange={e => setShipData({...shipData, first_name: e.target.value})} />
-                        <InputS placeholder="Apellidos" value={shipData.last_name} onChange={e => setShipData({...shipData, last_name: e.target.value})} />
+                        <InputCart placeholder="Nombre" value={shipData.first_name} onChange={e => setShipData({...shipData, first_name: e.target.value})} width="50%" />
+                        <InputCart placeholder="Apellidos" value={shipData.last_name} onChange={e => setShipData({...shipData, last_name: e.target.value})} width="50%" />
                     </div>
-                    <InputS placeholder="Dirección (Calle y número)" value={shipData.address_1} onChange={e => setShipData({...shipData, address_1: e.target.value})} />
-                    <InputS placeholder="Piso, puerta, bloque (Opcional)" value={shipData.address_2} onChange={e => setShipData({...shipData, address_2: e.target.value})} />
+                    <InputCart placeholder="Dirección Línea 1" value={shipData.address_1} onChange={e => setShipData({...shipData, address_1: e.target.value})} />
+                    <InputCart placeholder="Dirección Línea 2 (Opcional)" value={shipData.address_2} onChange={e => setShipData({...shipData, address_2: e.target.value})} />
                     <div style={{ display: "flex", gap: "5px" }}>
-                        <InputS placeholder="Ciudad" value={shipData.city} onChange={e => setShipData({...shipData, city: e.target.value})} />
-                        <input 
-                          placeholder="C.P." 
-                          type="tel"
-                          inputMode="numeric"
-                          value={shipData.postal_code} 
-                          onChange={e => {
-                            const val = e.target.value.replace(/\D/g, ""); 
-                            if (val.length <= 5) setShipData({...shipData, postal_code: val});
-                          }}
-                          style={{ width: "35%", padding: "10px", border: "1px solid #ddd", marginBottom: "10px", fontSize: "13px", boxSizing: "border-box", outline: "none" }}
-                        />
+                        <InputCart placeholder="Ciudad" value={shipData.city} onChange={e => setShipData({...shipData, city: e.target.value})} width="65%" />
+                        <InputCart placeholder="CP" type="tel" value={shipData.postal_code} onChange={e => setShipData({...shipData, postal_code: e.target.value.replace(/\D/g,"")})} width="35%" />
                     </div>
-                    <InputS placeholder="Provincia" value={shipData.state} onChange={e => setShipData({...shipData, state: e.target.value})} />
-                    <InputS 
-                      placeholder="Teléfono" 
-                      type="tel"
-                      inputMode="tel"
-                      value={shipData.phone} 
-                      onChange={e => {
-                        const val = e.target.value.replace(/\D/g, "");
-                        if (val.length <= 9) setShipData({...shipData, phone: val});
-                      }}
-                    />
-                    
-                    <button 
-                      onClick={handleConfirmAddress}
-                      style={{ width: "100%", padding: "10px", backgroundColor: "#000", color: "#fff", border: "none", fontWeight: "900", cursor: "pointer", fontSize: "11px", textTransform: "uppercase", marginTop: "5px" }}
-                    >
-                      Confirmar Dirección
-                    </button>
+                    <select value={shipData.state || ""} onChange={e => setShipData({...shipData, state: e.target.value})} style={{ width: "100%", padding: "10px", border: "1px solid #ddd", fontSize: "13px", outline: "none", backgroundColor: "#fff", marginBottom: '10px' }}>
+                        <option value="">Provincia...</option>
+                        {PROVINCIAS.map(p => <option key={p} value={p}>{p}</option>)}
+                    </select>
+                    <InputCart placeholder="Teléfono" type="tel" value={shipData.phone} onChange={e => setShipData({...shipData, phone: e.target.value.replace(/\D/g,"")})} />
+                    <button onClick={handleConfirmAddress} style={{ width: "100%", padding: "10px", backgroundColor: "#000", color: "#fff", border: "none", fontWeight: "900", cursor: "pointer", fontSize: "11px", textTransform: "uppercase" }}>{busy ? "GUARDANDO..." : "Confirmar Dirección"}</button>
                   </div>
                 )}
               </div>
 
-              <div style={{ borderTop: "1px solid #ddd", paddingTop: "15px", marginTop: "15px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "14px", marginBottom: "10px" }}>
-                  <span>SUBTOTAL</span>
-                  <span>{total.toFixed(2)} €</span>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "14px", marginBottom: "10px" }}>
-                  <span>ENVÍO</span>
-                  <span style={{ color: shippingCost === 0 ? "#2e7d32" : "#000", fontWeight: "bold" }}>
-                    {shippingCost === 0 ? "GRATIS" : `${shippingCost.toFixed(2)} €`}
-                  </span>
-                </div>
-
-                <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "900", fontSize: "18px", marginTop: "20px", marginBottom: "25px", borderTop: "2px solid #000", paddingTop: "15px" }}>
-                  <span>TOTAL</span>
-                  <span>{finalTotal.toFixed(2)} €</span>
-                </div>
-
+              <div style={{ borderTop: "1px solid #ddd", paddingTop: "15px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "14px", marginBottom: "10px" }}><span>SUBTOTAL</span><span>{total.toFixed(2)} €</span></div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "14px", marginBottom: "10px" }}><span>ENVÍO</span><span style={{ color: shippingCost === 0 ? "#2e7d32" : "#000", fontWeight: "bold" }}>{shippingCost === 0 ? "GRATIS" : `${shippingCost.toFixed(2)} €`}</span></div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "900", fontSize: "18px", marginTop: "20px", marginBottom: "25px", borderTop: "2px solid #000", paddingTop: "15px" }}><span>TOTAL</span><span>{finalTotal.toFixed(2)} €</span></div>
                 {!orderId ? (
                   <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                    <button 
-                      onClick={createOrder} 
-                      disabled={busy || isAddingNew}
-                      style={{ width: "100%", padding: "15px", backgroundColor: isAddingNew ? "#ccc" : "#000", color: "#fff", border: "none", fontWeight: "900", cursor: isAddingNew ? "not-allowed" : "pointer", textTransform: "uppercase", fontSize: "13px" }}
-                    >
-                      {isAddingNew ? "CONFIRMA LA DIRECCIÓN" : "Confirmar y pagar con PayPal"}
-                    </button>
-                    <button 
-                      onClick={handleContrareembolso} 
-                      disabled={busy || isAddingNew}
-                      style={{ width: "100%", padding: "14px", backgroundColor: "#fff", color: "#000", border: isAddingNew ? "2px solid #ccc" : "2px solid #000", fontWeight: "900", cursor: isAddingNew ? "not-allowed" : "pointer", textTransform: "uppercase", fontSize: "13px" }}
-                    >
-                      Pago Contrareembolso
-                    </button>
+                    <button onClick={createOrder} disabled={busy || isAddingNew} style={{ width: "100%", padding: "15px", backgroundColor: isAddingNew ? "#ccc" : "#000", color: "#fff", border: "none", fontWeight: "900", cursor: "pointer", textTransform: "uppercase", fontSize: "13px" }}>CONFIRMAR Y PAGAR</button>
+                    <button onClick={handleContrareembolso} disabled={busy || isAddingNew} style={{ width: "100%", padding: "14px", backgroundColor: "#fff", color: "#000", border: isAddingNew ? "2px solid #ccc" : "2px solid #000", fontWeight: "900", cursor: "pointer", textTransform: "uppercase", fontSize: "13px" }}>CONTRAREEMBOLSO</button>
                   </div>
                 ) : (
-                  <div>
-                    <PayPalButtons 
-                      style={{ layout: "vertical", shape: "rect" }}
-                      createOrder={(data, actions) => actions.order.create({ purchase_units: [{ amount: { value: finalTotal.toFixed(2) } }] })}
-                      onApprove={(data, actions) => actions.order.capture().then(details => onPayPalSuccess(details, data, orderId))}
-                    />
-                    <button onClick={() => setOrderId(null)} style={{ background: "none", border: "none", color: "#888", width: "100%", marginTop: "10px", fontSize: "11px", cursor: "pointer", textDecoration: "underline" }}>Cambiar método de pago</button>
-                  </div>
+                  <PayPalButtons style={{ layout: "vertical" }} createOrder={(data, actions) => actions.order.create({ purchase_units: [{ amount: { value: finalTotal.toFixed(2) } }] })} onApprove={(data, actions) => actions.order.capture().then(details => onPayPalSuccess(details, data, orderId))} />
                 )}
               </div>
             </div>
-            {err && <div style={{ marginTop: "20px", color: "#d32f2f", fontWeight: "bold", textAlign: "center", fontSize: "12px" }}>{err}</div>}
           </div>
         </div>
       )}
-      <style>{`@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }`}</style>
     </div>
   );
 }

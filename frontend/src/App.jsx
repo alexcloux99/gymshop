@@ -57,7 +57,7 @@ function Nav() {
       </div>
 
       <Link to="/" style={{ textDecoration: "none", color: "#000", fontSize: "22px", fontWeight: "900", letterSpacing: "-1px" }}>
-        GYMSHOP
+        AMC FIT
       </Link>
 
       <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
