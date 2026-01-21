@@ -18,9 +18,10 @@ Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
 ```
 ## 🚀  Instalación
 ### 1. Clonar el proyecto
+```
  git clone https://github.com/alexcloux99/gymshop.git
  cd gymshop
-
+```
 ### 2. Configurar el Backend
 # Crear entorno virtual
 python -m venv env
