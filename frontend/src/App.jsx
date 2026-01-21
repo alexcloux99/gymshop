@@ -47,7 +47,8 @@ function Nav() {
     <nav style={{
       display: "flex", alignItems: "center", justifyContent: "space-between",
       padding: "15px 40px", backgroundColor: "#fff", borderBottom: "1px solid #eee",
-      position: "sticky", top: 0, zIndex: 1000, fontFamily: "Helvetica, Arial, sans-serif"
+      position: "sticky", top: 0, zIndex: 1000, fontFamily: "Helvetica, Arial, sans-serif",
+      flexWrap: "wrap", gap: "15px"
     }}>
       
       <div style={{ display: "flex", gap: "25px" }}>

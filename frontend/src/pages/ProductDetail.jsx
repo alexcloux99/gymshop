@@ -76,7 +76,7 @@ export default function ProductDetail() {
   const showSizeSelector = p.category === 'men' || p.category === 'women' || (p.category === 'accessories' && p.variants?.length > 0 && p.variants[0].size !== 'N/A');
 
   return (
-    <div style={{ maxWidth: 1200, margin: "40px auto", padding: "0 20px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "60px", fontFamily: "Helvetica, Arial, sans-serif", position: "relative" }}>
+    <div style={{ maxWidth: 1200, margin: "40px auto", padding: "0 20px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "40px", fontFamily: "Helvetica, Arial, sans-serif", position: "relative" }}>
       
       {toast.show && (
         <div style={{

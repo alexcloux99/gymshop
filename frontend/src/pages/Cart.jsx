@@ -115,7 +115,7 @@ export default function Cart() {
             <button onClick={() => window.location.href='/'} style={{ backgroundColor: "#000", color: "#fff", padding: "12px 25px", border: "none", fontWeight: "bold", cursor: "pointer", marginTop: '20px' }}>VOLVER A LA TIENDA</button>
         </div>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 400px", gap: "50px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "50px" }}>
           <div>
             {items.map(it => (
               <div key={it.id + (it.size || "")} style={{ display: "flex", gap: "20px", padding: "20px 0", borderBottom: "1px solid #eee" }}>
