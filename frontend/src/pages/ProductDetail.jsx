@@ -69,11 +69,16 @@ export default function ProductDetail() {
 
   if (loading) return <p style={{textAlign: 'center', padding: '100px', fontWeight: 'bold'}}>... (Cargando producto)</p>;
   if (error || !p) return <p style={{textAlign: 'center', padding: '100px'}}>No se ha encontrado el artículo.</p>;
-  const sizes = ["S", "M", "L", "XL"];
-  const selectedVariant = p.variants?.find(v => v.size === selectedSize);
-  const currentStock = selectedVariant ? selectedVariant.stock : 0;
   
+  const sizes = ["S", "M", "L", "XL"];
   const showSizeSelector = p.category === 'men' || p.category === 'women' || (p.category === 'accessories' && p.variants?.length > 0 && p.variants[0].size !== 'N/A');
+
+  const selectedVariant = p.variants?.find(v => v.size === selectedSize);
+  const naVariant = p.variants?.find(v => v.size === 'N/A');
+
+  const currentStock = showSizeSelector 
+    ? (selectedVariant ? selectedVariant.stock : null) 
+    : (naVariant ? naVariant.stock : 0);
 
   return (
     <div style={{ maxWidth: 1200, margin: "40px auto", padding: "0 20px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "40px", fontFamily: "Helvetica, Arial, sans-serif", position: "relative" }}>
@@ -97,11 +102,12 @@ export default function ProductDetail() {
         </div>
         <h1 style={{ fontSize: "36px", fontWeight: "900", margin: 0, textTransform: "uppercase" }}>{p.name}</h1>
         <div style={{ fontSize: "24px", fontWeight: "700" }}>{p.price} €</div>
-        {selectedSize && (currentStock === 0 || currentStock < 10) && (  // Mostrar mensaje de ultimas unidades a partir de 10 unidades en stock
+        
+        {((showSizeSelector && selectedSize !== "") || !showSizeSelector) && (currentStock === 0 || currentStock < 10) && (
           <div style={{ marginTop: "10px", animation: "fadeIn 0.3s ease" }}>
             {currentStock === 0 ? (
               <span style={{ color: "#d32f2f", fontWeight: "800", fontSize: "11px", textTransform: "uppercase" }}>
-                ● Agotado: Talla {selectedSize} no disponible
+                ● Agotado: No quedan unidades disponibles
               </span>
             ) : (
               <span style={{ color: "#000", backgroundColor: "#ccff00", padding: "4px 10px", fontWeight: "900", fontSize: "10px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
@@ -155,24 +161,24 @@ export default function ProductDetail() {
                 showNotification("ELIGE UNA TALLA");
                 return;
               }
-              if (selectedSize && currentStock === 0) {
-                showNotification("TALLA AGOTADA");
+              if (currentStock === 0) {
+                showNotification("PRODUCTO AGOTADO");
                 return;
               }
               add({ ...p, size: selectedSize || "N/A" }, 1);
               showNotification("AÑADIDO AL CARRITO");
             }}
-          disabled={showSizeSelector && selectedSize && currentStock === 0}
+          disabled={showSizeSelector ? (selectedSize && currentStock === 0) : (currentStock === 0)}
           style={{
             marginTop: "10px", padding: "20px", 
-            backgroundColor: (selectedSize && currentStock === 0) ? "#666" : "#000", 
+            backgroundColor: ((showSizeSelector && selectedSize && currentStock === 0) || (!showSizeSelector && currentStock === 0)) ? "#666" : "#000", 
             color: "#fff", border: "none", fontWeight: "900", fontSize: "15px", 
-            cursor: (selectedSize && currentStock === 0) ? "not-allowed" : "pointer",
+            cursor: ((showSizeSelector && selectedSize && currentStock === 0) || (!showSizeSelector && currentStock === 0)) ? "not-allowed" : "pointer",
             display: "flex", alignItems: "center", justifyContent: "center", gap: "12px",
             textTransform: "uppercase"
           }}
         >
-          {(selectedSize && currentStock === 0) ? "TALLA AGOTADA" : <><FiShoppingBag size={18} /> AÑADIR AL CARRITO</>}
+          {((showSizeSelector && selectedSize && currentStock === 0) || (!showSizeSelector && currentStock === 0)) ? "PRODUCTO AGOTADO" : <><FiShoppingBag size={18} /> AÑADIR AL CARRITO</>}
         </button>
 
         <div style={{ borderTop: "1px solid #eee", marginTop: "30px", paddingTop: "20px" }}>
