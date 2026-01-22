@@ -8,6 +8,7 @@ from .models import Product, Reviews
 from .serializers import ProductSerializer, ReviewSerializer
 from backend.pagination import CustomPagination
 
+# Listar productos con filtros, búsqueda y paginación
 @api_view(["GET"])
 def get_products(request):
     qs = Product.objects.all()
@@ -38,13 +39,13 @@ def get_products(request):
     page = paginator.paginate_queryset(qs, request)
     ser = ProductSerializer(page, many=True, context={"request": request})
     return paginator.get_paginated_response(ser.data)
-
+# Obtener detalles de un producto por slug
 @api_view(["GET"])
 def get_product(request, slug):
     p = get_object_or_404(Product, slug=slug)
     ser = ProductSerializer(p, context={"request": request})
     return Response(ser.data)
-
+# Crear una reseña para un producto
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def create_review(request, pk):

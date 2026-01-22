@@ -2,7 +2,6 @@ import { createContext, useContext, useState, useEffect } from "react";
 import { apiPost, apiGet } from "../api/client";
 
 export const AuthContext = createContext();
-
 export default function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem("gymshop_token"));
@@ -19,6 +18,7 @@ export default function AuthProvider({ children }) {
     }
   }, [token]);
 
+  // Función para iniciar sesión, pedir contraseña y email
   async function login(email, password) {
     try {
       const resp = await apiPost("/api/auth/token/", { 

@@ -20,8 +20,8 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.http import JsonResponse
 
-admin.site.site_header = "Panel de Control GYMSHOP"
-admin.site.site_title = "GYMSHOP Admin"
+admin.site.site_header = "Panel de Control AMC FIT"
+admin.site.site_title = "AMC FIT Admin"
 admin.site.index_title = "Bienvenido a la gestión de tu tienda de Gym"
 
 def health(_):

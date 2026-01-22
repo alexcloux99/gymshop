@@ -44,11 +44,11 @@ class LoginWithEmailAPIView(APIView):
                 
         except User.DoesNotExist:
             return Response({"detail": "El email no está registrado"}, status=401)
-
+# Registro de usuario
 class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
     permission_classes = [permissions.AllowAny]
-
+# Obtenemos el perfil del usuario logeado
 class MeView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     def get(self, request):
@@ -59,7 +59,7 @@ class MeView(APIView):
             "phone": p.phone, "address_1": p.address_1, "address_2": p.address_2,
             "city": p.city, "state": p.state, "postal_code": p.postal_code, "country": p.country
         })
-
+# Actualiza el perfil del usuario
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
 def update_profile(request):
@@ -112,7 +112,6 @@ def reset_password_confirm(request):
         return Response({"status": "ok", "message": "Contraseña cambiada con éxito"})
     except User.DoesNotExist:
         return Response({"detail": "Error al procesar la solicitud."}, status=400)
-
 class LogoutView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     def post(self, request):

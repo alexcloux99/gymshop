@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { apiPost } from "../api/client";
 import { useNavigate, Link } from "react-router-dom";
+// importamos los iconos para mostrar/ocultar la contraseña propios de django-react
 import { FiEye, FiEyeOff } from "react-icons/fi";
 
 export default function Register() {

@@ -1,6 +1,7 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
+// Componente para las rutas que requiren iniciar sesión
 export default function RequireAuth({ children }) {
   const { token } = useAuth();
   const loc = useLocation();

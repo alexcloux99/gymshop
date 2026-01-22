@@ -24,6 +24,5 @@ urlpatterns = [
     # Recuperación de contraseña
     path("auth/forgot-password/", forgot_password, name="forgot-password"),
     path("auth/reset-password-confirm/", reset_password_confirm, name="reset-confirm"),
-    
     path("auth/logout/", LogoutView.as_view(), name="logout"),
 ]

@@ -3,6 +3,7 @@ from django.db.utils import OperationalError, ProgrammingError
 from rest_framework import serializers
 from .models import Product, Reviews, ProductVariant
 
+# Serializer para las reseñas de productos
 class ReviewSerializer(serializers.ModelSerializer):
     username = serializers.ReadOnlyField(source="user.email")
 
@@ -28,7 +29,7 @@ class ProductSerializer(serializers.ModelSerializer):
             "id", "slug", "name", "image", "category", "description",
             "price", "variants", "created", "rating", "num_reviews", "reviews",
         ]
-
+    # Métodos para obtener imagen, fecha de creación, calificación y número de reseñas
     def get_image(self, obj):
         img = getattr(obj, "image", None)
         if not img:

@@ -4,12 +4,14 @@ import { absUrl } from "../api/client";
 import { useWishlist } from "../context/WishlistContext.jsx";
 import { FiHeart } from "react-icons/fi";
 
+// Componenete para mostrar el producto, favoritos y stock
 export default function ProductCard({ p }) {
   const { add } = useCart();
   const { toggleWishlist, isFavorite } = useWishlist();
   
   const fav = isFavorite(p.id);
   const isOutOfStock = p.stock === 0;
+  // si el stock es menor a 10 pero mayor a 0 mostrar aviso de ultimas unidades
   const isLowStock = p.stock > 0 && p.stock < 10;
 
   return (
@@ -60,7 +62,7 @@ export default function ProductCard({ p }) {
               aspectRatio: "3/4",
               objectFit: "cover", 
               backgroundColor: "#f5f5f5",
-              filter: isOutOfStock ? "grayscale(1) opacity(0.7)" : "none" // si está agotado, poner en escala de grises
+              filter: isOutOfStock ? "grayscale(1) opacity(0.7)" : "none" // si está agotado, poner la imagen en gris
             }} 
           />
         ) : (

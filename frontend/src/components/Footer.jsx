@@ -7,7 +7,7 @@ import {
   FaPaypal, 
   FaTruckFast 
 } from "react-icons/fa6";
-
+// Componente para el footer
 export default function Footer() {
   return (
     <footer style={{

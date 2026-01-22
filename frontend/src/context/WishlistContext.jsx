@@ -1,7 +1,6 @@
 import { createContext, useContext, useState, useEffect } from "react";
-
+// Lista de favoritos del usuario
 const WishlistContext = createContext();
-
 export default function WishlistProvider({ children }) {
   const [wishlist, setWishlist] = useState(() => {
     const saved = localStorage.getItem("gymshop_wishlist");

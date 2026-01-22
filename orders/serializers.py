@@ -3,6 +3,7 @@ from .models import Order, OrderItem
 from products.serializers import ProductSerializer
 from decimal import Decimal
 
+# Detalles de los pedidos 
 class OrderItemSerializer(serializers.ModelSerializer):
     product_name = serializers.ReadOnlyField(source='product.name')
     product_image = serializers.ImageField(source='product.image', read_only=True)
@@ -16,12 +17,10 @@ class OrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = '__all__'
-
 class OrderItemInputSerializer(serializers.Serializer):
     product_id = serializers.IntegerField()
     qty = serializers.IntegerField(min_value=1)
     size = serializers.CharField(required=False, allow_blank=True) 
-
 class CheckoutSerializer(serializers.Serializer):
     items = OrderItemInputSerializer(many=True)
     address = serializers.CharField(required=False)

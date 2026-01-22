@@ -45,7 +45,7 @@ class RegisterSerializer(ModelSerializer):
 class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
     permission_classes = [permissions.AllowAny]
-
+# --- LOGIN DE USUARIOS ---
 class LoginWithEmailAPIView(APIView):
     permission_classes = [permissions.AllowAny]
 
@@ -72,7 +72,7 @@ class LoginWithEmailAPIView(APIView):
                 return Response({"detail": "Contraseña incorrecta"}, status=401)
         except User.DoesNotExist:
             return Response({"detail": "El email no está registrado"}, status=401)
-
+# --- GESTIÓN DE PEDIDOS ---
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 @transaction.atomic
@@ -146,7 +146,7 @@ def create_order(request):
             print(f"Error enviando email contra-reembolso: {e}")
     
     return Response(OrderSerializer(order).data, status=201)
-
+# --- VISTA DE PEDIDOS DEL USUARIO ---
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def my_orders(request):
@@ -154,14 +154,14 @@ def my_orders(request):
     qs = Order.objects.filter(user=request.user).order_by('-created_at')
     ser = OrderSerializer(qs, many=True)
     return Response(ser.data)
-
+# --- DETALLE DE PEDIDO DEL USUARIO ---
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def order_detail(request, pk):
     """ Detalle de los pedidos del usuario"""
     o = get_object_or_404(Order, pk=pk, user=request.user)
     return Response(OrderSerializer(o).data)
-
+# --- CONFIRMAR PAGO PAYPAL ---
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def pay_order_paypal(request, pk):
@@ -209,7 +209,7 @@ def forgot_password(request):
         return Response({"status": "ok"})
     except User.DoesNotExist:
         return Response({"detail": "Email no encontrado"}, status=404)
-
+# --- Confirmar nueva contraseña ---
 @api_view(['POST'])
 @permission_classes([permissions.AllowAny])
 def reset_password_confirm(request):
@@ -222,7 +222,7 @@ def reset_password_confirm(request):
         return Response({"status": "ok"})
     except User.DoesNotExist:
         return Response({"detail": "Error al procesar"}, status=400)
-
+# --- VISTA PERFIL USUARIO ---
 class MeView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     def get(self, request):
@@ -234,7 +234,7 @@ class MeView(APIView):
             "phone": p.phone, "address_1": p.address_1, "address_2": p.address_2,
             "city": p.city, "state": p.state, "postal_code": p.postal_code, "country": p.country
         })
-
+# --- ACTUALIZAR USUARIO ---
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
 def update_profile(request):
@@ -256,7 +256,6 @@ class LogoutView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     def post(self, request):
         return Response({"status": "ok"})
-
 @api_view(['POST'])
 @permission_classes([IsAdminUser])
 def admin_mark_paid(request, pk):

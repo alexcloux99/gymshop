@@ -53,7 +53,6 @@ export default function SizeGuide() {
           </tbody>
         </table>
 
-        {/* DETALLE EXTRA PRO */}
         <div style={{ backgroundColor: "#f9f9f9", padding: "30px", borderRadius: "4px" }}>
           <h3 style={{ fontSize: "16px", fontWeight: "800", marginBottom: "15px", textTransform: "uppercase" }}>¿Cómo medir?</h3>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "30px" }}>

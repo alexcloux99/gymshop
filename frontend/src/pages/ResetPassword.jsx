@@ -109,7 +109,7 @@ export default function ResetPassword() {
           {busy ? "Guardando..." : "Actualizar Contraseña"}
         </button>
       </form>
-
+// Estilos para la notificación
       <style>{`
         @keyframes slideIn {
           from { transform: translateX(100%); opacity: 0; }

@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
 
+# Creamos el serializer para el registro de usuarios con validaciones
 class RegisterSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(
         required=True, max_length=80,

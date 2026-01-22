@@ -1,6 +1,6 @@
 import { useWishlist } from "../context/WishlistContext";
 import ProductCard from "../components/ProductCard";
-
+// Funcion para mostrar los productos favoritos guardados en el wishlist
 export default function Favorites() {
   const { wishlist } = useWishlist();
 

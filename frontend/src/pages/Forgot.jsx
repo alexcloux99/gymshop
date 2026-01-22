@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { apiPost } from "../api/client";
 import { Link } from "react-router-dom";
-
+// Pagina para recuperar la contraseña olvidada
 export default function Forgot() {
   const [email, setEmail] = useState("");
   const [msg, setMsg] = useState("");
@@ -18,7 +18,7 @@ export default function Forgot() {
       setErr("NO SE HA ENCONTRADO NINGUNA CUENTA CON ESE EMAIL.");
     } finally { setBusy(false); }
   };
-
+// Formulario para introducir el email y enviar la solicitud para restablecer la contraseña por consola 
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "70vh", padding: "0 20px" }}>
       <h2 style={{ fontWeight: "900", textTransform: "uppercase", marginBottom: "10px" }}>¿Has olvidado tu contraseña?</h2>

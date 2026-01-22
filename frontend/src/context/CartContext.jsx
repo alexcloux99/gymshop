@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 
 const CartCtx = createContext(null);
 export const useCart = () => useContext(CartCtx);
-
+// Funcion para dar formato al carrito con precios cantidad etc
 export default function CartProvider({ children }) {
   const [items, setItems] = useState(() => {
     const raw = localStorage.getItem("cart");

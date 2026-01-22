@@ -3,7 +3,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { apiPost, apiPut, apiGet } from "../api/client.js";
 import { useState, useEffect } from "react";
 import { PayPalButtons } from "@paypal/react-paypal-js";
-
+// Creamos este archivo para manejar el carrito de compras y el proceso de pago.
 const PROVINCIAS = ["Álava", "Albacete", "Alicante", "Almería", "Asturias", "Ávila", "Badajoz", "Barcelona", "Burgos", "Cáceres", "Cádiz", "Cantabria", "Castellón", "Ciudad Real", "Córdoba", "Cuenca", "Girona", "Granada", "Guadalajara", "Guipúzcoa", "Huelva", "Huesca", "Islas Baleares", "Jaén", "La Coruña", "La Rioja", "Las Palmas", "León", "Lleida", "Lugo", "Madrid", "Málaga", "Murcia", "Navarra", "Orense", "Palencia", "Pontevedra", "Salamanca", "Santa Cruz de Tenerife", "Segovia", "Sevilla", "Soria", "Tarragona", "Teruel", "Toledo", "Valencia", "Valladolid", "Vizcaya", "Zamora", "Zaragoza", "Ceuta", "Melilla"];
 
 const InputCart = ({ placeholder, value, onChange, error, type = "text", width = "100%" }) => (
@@ -28,7 +28,7 @@ export default function Cart() {
     first_name: "", last_name: "", address_1: "", address_2: "",
     city: "", state: "", postal_code: "", phone: "", country: "España"
   });
-
+// Cálculo de gastos de envío: gratis para pedidos superiores a 50€
   const shippingCost = total >= 50 ? 0 : 4.99;
   const finalTotal = total + shippingCost;
 
@@ -51,7 +51,7 @@ export default function Cart() {
     }
     setBusy(true);
     try {
-      // Sincronizamos con el perfil de "Mi Cuenta"
+      // Sincronizamos la direccion de envío con el perfil del usuario cuando lo cambiamos desde el carrito, de esta manera se guarda tambien en la cuenta.
       await apiPut("/api/auth/profile/update/", shipData, token);
       const newData = await apiGet("/api/auth/me/", token);
       setUser(newData);
@@ -94,7 +94,7 @@ export default function Cart() {
     } catch (e) { setErr(e.message); }
     finally { setBusy(false); }
   }
-
+// Mostramos por consola del back el estado del pedido y el número de pedido al finalizar la compra.
   if (isSuccess) {
     return (
       <div style={{ textAlign: 'center', padding: '100px 20px', fontFamily: 'Helvetica' }}>

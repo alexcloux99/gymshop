@@ -88,7 +88,7 @@ function Nav() {
     </nav>
   );
 }
-
+// Funcion prinpial de la app, con sus rutas, credenciales de paypal 
 export default function App() {
   return (
     <PayPalScriptProvider options={{ "client-id": "Ae2acUMOWhIEi73CNDtqiWDDUMJZ_6xjl9xSTRp2yb3jRQKZ8jR0dRVaFD_hLhFj-mgIdxagl27fukIx", currency: "EUR","disable-funding": "credit,card" }}>

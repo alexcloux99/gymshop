@@ -1,3 +1,4 @@
+// Pagina para mostrar preguntas frecuentes FAQ
 export default function FAQ() {
   return (
     <div style={{ 
