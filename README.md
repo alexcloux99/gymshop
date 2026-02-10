@@ -4,7 +4,7 @@
 
 ## 🛠️ Dependencias
 Para arrancar este proyecto necesitas tener instalado:
-*   **Git**: Para la clonación del repositorio.
+*   **Git**: Para la clonación del repositorio. [Descargar aquí](https://git-scm.com/install/windows)
 *   **Python 3.12.3**: [Descargar aquí](https://www.python.org/downloads/)
 *   **Node.js v22.21.1 (LTS)**: [Descargar aquí](https://nodejs.org/)
 
@@ -32,7 +32,7 @@ python -m venv env
 ```
 # Activar entorno (Linux/Mac)
 ```
-source env/bin/activate
+source ./env/Scripts/activate
 ```
 # Instalar dependencias
 ```
