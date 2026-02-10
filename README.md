@@ -64,8 +64,8 @@ Panel de Control (Admin)
 Para gestionar stock, tallas, productos y ver pedidos:
 ```
 -URL: http://127.0.0.1:8000/admin
--Usuario: admin@admin.com
--Password: admin123
+-Usuario: admin
+-Password: amcfit123
 ```
 
 Si la base de datos aparece vacía, crea tu propio superusuario:
