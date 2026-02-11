@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 
 export default function Login() {
@@ -10,13 +10,15 @@ export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState("");
+  const location = useLocation();
+  const from = location.state?.from || "/";
 
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
     try {
       await login(email, password);
-      navigate("/");
+      navigate(from);
     } catch (err) {
       setError("Credenciales incorrectas o cuenta inexistente.");
     }

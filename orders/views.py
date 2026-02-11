@@ -81,11 +81,20 @@ def create_order(request):
     items = request.data.get('items') or []
     if not items:
         return Response({'detail': 'Carrito vacío'}, status=400)
+
     payment_method = request.data.get('payment_method', 'paypal')
+    paypal_id = request.data.get('paypal_id', None)
+
+    if payment_method == 'paypal' and not paypal_id:
+        return Response({'detail': 'Pago PayPal no confirmado'}, status=400)
+
+    initial_status = "paid" if payment_method == "paypal" else "pending"
 
     order = Order.objects.create(
-        user=request.user, 
-        status="pending",
+        user=request.user,
+        status=initial_status,
+        paid_at=timezone.now() if payment_method == "paypal" else None,
+        paypal_id=paypal_id,
         first_name=request.data.get('first_name'),
         last_name=request.data.get('last_name'),
         address_1=request.data.get('address_1'),
@@ -96,28 +105,28 @@ def create_order(request):
         phone=request.data.get('phone'),
         payment_method=payment_method
     )
-    
-    subtotal = Decimal('0.00') 
+
+    subtotal = Decimal('0.00')
 
     for it in items:
-        pid = it.get('product_id') or it.get('product')   
+        pid = it.get('product_id') or it.get('product')
         qty = int(it.get('qty', 1))
-        talla_elegida = it.get('size', 'N/A') 
+        talla_elegida = it.get('size', 'N/A')
 
         try:
             variant = ProductVariant.objects.select_for_update().get(product_id=pid, size=talla_elegida)
             if variant.stock < qty:
                 return Response({'detail': f'Sin stock suficiente para la talla {talla_elegida} de este artículo'}, status=400)
-            
+
             variant.stock -= qty
             variant.save()
 
             OrderItem.objects.create(
-                order=order, 
-                product=variant.product, 
-                qty=qty, 
+                order=order,
+                product=variant.product,
+                qty=qty,
                 price=variant.product.price,
-                size=talla_elegida 
+                size=talla_elegida
             )
             subtotal += variant.product.price * qty
         except ProductVariant.DoesNotExist:
@@ -126,7 +135,30 @@ def create_order(request):
     shipping_cost = Decimal('0.00') if subtotal >= 50 else Decimal('4.99')
     order.total = subtotal + shipping_cost
     order.save(update_fields=['total'])
-    if payment_method == "contrareembolso":
+
+    # Log y email según método de pago
+    if payment_method == "paypal":
+        print("\n" + "*"*50)
+        print(f"💰 PAGO CONFIRMADO POR PAYPAL")
+        print(f"ORDEN: #{order.id}")
+        print(f"CLIENTE: {request.user.email}")
+        print(f"IMPORTE: {order.total} €")
+        print(f"PAYPAL ID: {paypal_id}")
+        print("*"*50 + "\n")
+        try:
+            subject = f'Confirmación de pago AMC FIT #{order.id}'
+            message = (
+                f'Hola {order.user.first_name or "cliente"},\n\n'
+                f'¡Gracias por tu compra en AMC FIT!\n'
+                f'Hemos recibido tu pago correctamente para el pedido #{order.id}.\n'
+                f'Total: {order.total} €\n\n'
+                f'En breve recibirás un número de seguimiento. ¡Gracias!'
+            )
+            send_mail(subject, message, 'soporte@amcfit.com', [order.user.email])
+        except Exception as e:
+            print(f"Error enviando email PayPal: {e}")
+
+    elif payment_method == "contrareembolso":
         print("\n" + "="*50)
         print(f"📦 NUEVO PEDIDO CONTRA-REEMBOLSO")
         print(f"ID: #{order.id}")
@@ -136,15 +168,17 @@ def create_order(request):
         print("="*50 + "\n")
         try:
             subject = f'Confirmación de pedido AMC FIT #{order.id} (Contra-reembolso)'
-            message = f'Hola {order.user.first_name or "cliente"},\n\n' \
-                      f'Hemos recibido tu pedido por Contra-reembolso correctamente.\n' \
-                      f'Número de pedido: #{order.id}\n' \
-                      f'Pagarás un total de {order.total} € al recibir el paquete en tu domicilio.\n\n' \
-                      f'¡Gracias por confiar en AMC FIT!'
+            message = (
+                f'Hola {order.user.first_name or "cliente"},\n\n'
+                f'Hemos recibido tu pedido por Contra-reembolso correctamente.\n'
+                f'Número de pedido: #{order.id}\n'
+                f'Pagarás un total de {order.total} € al recibir el paquete en tu domicilio.\n\n'
+                f'¡Gracias por confiar en AMC FIT!'
+            )
             send_mail(subject, message, 'soporte@amcfit.com', [order.user.email])
         except Exception as e:
             print(f"Error enviando email contra-reembolso: {e}")
-    
+
     return Response(OrderSerializer(order).data, status=201)
 # --- VISTA DE PEDIDOS DEL USUARIO ---
 @api_view(['GET'])

@@ -28,6 +28,7 @@ class ProductSerializer(serializers.ModelSerializer):
         fields = [
             "id", "slug", "name", "image", "category", "description",
             "price", "variants", "created", "rating", "num_reviews", "reviews",
+            "requires_size",
         ]
     # Métodos para obtener imagen, fecha de creación, calificación y número de reseñas
     def get_image(self, obj):

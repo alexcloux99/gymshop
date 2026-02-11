@@ -4,15 +4,16 @@ import { absUrl } from "../api/client";
 import { useWishlist } from "../context/WishlistContext.jsx";
 import { FiHeart } from "react-icons/fi";
 
-// Componenete para mostrar el producto, favoritos y stock
 export default function ProductCard({ p }) {
   const { add } = useCart();
   const { toggleWishlist, isFavorite } = useWishlist();
   
   const fav = isFavorite(p.id);
   const isOutOfStock = p.stock === 0;
-  // si el stock es menor a 10 pero mayor a 0 mostrar aviso de ultimas unidades
   const isLowStock = p.stock > 0 && p.stock < 10;
+  
+  // Si requiere talla, redirigir a detalle
+  const requiresSizeSelection = p.requires_size === true;
 
   return (
     <div style={{ 
@@ -27,7 +28,6 @@ export default function ProductCard({ p }) {
         <div style={{ position: 'absolute', top: '10px', left: '10px', backgroundColor: '#ccff00', color: '#000', padding: '5px 10px', fontSize: '10px', fontWeight: '900', zIndex: 10 }}>ÚLTIMAS UNIDADES</div>
       ) : null}
 
-      {/* boton de favoritos */}
       <div 
         onClick={() => toggleWishlist(p)}
         style={{
@@ -62,7 +62,7 @@ export default function ProductCard({ p }) {
               aspectRatio: "3/4",
               objectFit: "cover", 
               backgroundColor: "#f5f5f5",
-              filter: isOutOfStock ? "grayscale(1) opacity(0.7)" : "none" // si está agotado, poner la imagen en gris
+              filter: isOutOfStock ? "grayscale(1) opacity(0.7)" : "none"
             }} 
           />
         ) : (
@@ -90,7 +90,6 @@ export default function ProductCard({ p }) {
           fontWeight: "500" 
         }}>
             {p.category === 'men' ? 'Hombre' : p.category === 'women' ? 'Mujer' : 'Accesorios'}
-            {p.size && p.size !== 'N/A' && ` | Talla ${p.size}`}
         </div>
 
         <div style={{ 
@@ -101,25 +100,49 @@ export default function ProductCard({ p }) {
             {Number(p.price).toFixed(2)} €
         </div>
 
-        <button 
-          onClick={() => add(p, 1)} 
-          disabled={isOutOfStock}
-          style={{ 
-            width: "100%",
-            padding: "10px", 
-            backgroundColor: isOutOfStock ? "#ccc" : "#000", 
-            color: "#fff",
-            border: "none",
-            fontWeight: "700",
-            fontSize: "12px",
-            textTransform: "uppercase",
-            cursor: isOutOfStock ? "not-allowed" : "pointer",
-            marginTop: "5px",
-            borderRadius: "2px"
-          }}
-        >
-          {isOutOfStock ? "SIN STOCK" : "Añadir al carrito"}
-        </button>
+        {requiresSizeSelection ? (
+          <Link 
+            to={`/product/${p.slug || p.id}`}
+            style={{ 
+              display: "block",
+              width: "100%",
+              padding: "10px", 
+              backgroundColor: "#000", 
+              color: "#fff",
+              border: "none",
+              fontWeight: "700",
+              fontSize: "12px",
+              textTransform: "uppercase",
+              cursor: "pointer",
+              marginTop: "5px",
+              borderRadius: "2px",
+              textDecoration: "none",
+              textAlign: "center"
+            }}
+          >
+            VER TALLAS
+          </Link>
+        ) : (
+          <button 
+            onClick={() => add({ ...p, size: "N/A" }, 1)} 
+            disabled={isOutOfStock}
+            style={{ 
+              width: "100%",
+              padding: "10px", 
+              backgroundColor: isOutOfStock ? "#ccc" : "#000", 
+              color: "#fff",
+              border: "none",
+              fontWeight: "700",
+              fontSize: "12px",
+              textTransform: "uppercase",
+              cursor: isOutOfStock ? "not-allowed" : "pointer",
+              marginTop: "5px",
+              borderRadius: "2px"
+            }}
+          >
+            {isOutOfStock ? "SIN STOCK" : "Añadir al carrito"}
+          </button>
+        )}
       </div>
     </div>
   );

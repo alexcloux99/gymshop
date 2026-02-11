@@ -22,6 +22,7 @@ class Order(models.Model):
     country = models.CharField(max_length=100, default="España")
     
     payment_method = models.CharField(max_length=50, default="paypal")
+    paypal_id = models.CharField(max_length=100, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     paid_at = models.DateTimeField(null=True, blank=True)
 
