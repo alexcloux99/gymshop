@@ -20,6 +20,7 @@ import SizeGuide from "./pages/SizeGuide";
 import ScrollToTop from "./components/ScrollToTop";
 import Forgot from "./pages/Forgot";
 import ResetPassword from "./pages/ResetPassword";
+import NotFound from "./pages/NotFound.jsx";
 
 function Nav() {
   const { user, logout } = useAuth();
@@ -113,6 +114,7 @@ export default function App() {
                   <Route path="/size-guide" element={<SizeGuide />} />
                   <Route path="/forgot" element={<Forgot />} />
                   <Route path="/reset-password/:token" element={<ResetPassword />} />
+                  <Route path="*" element={<NotFound />} />
                 </Routes>
               </div>
               <Footer /> 
