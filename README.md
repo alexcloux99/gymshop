@@ -10,7 +10,9 @@ cd gymshop
 docker-compose up --build
 ```
 # Una vez creada la imagen
-docker-compose up
+```bash
+docker-compose up 
+```
 | | URL |
 |---|---|
 | 🌐 Frontend | http://localhost:5173 |
