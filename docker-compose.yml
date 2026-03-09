@@ -1,0 +1,24 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DJANGO_SECRET_KEY=django-insecure-&&0r-@9@9l2=^is4@l(j(yz&knrf1s=32^bo9lg)bbdw*yo0st
+      - DEBUG=True
+      - ALLOWED_HOSTS=127.0.0.1,localhost
+    volumes:
+      - .:/app
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    restart: unless-stopped
