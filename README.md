@@ -4,15 +4,19 @@
 
 ## 🐳 Arranque Rápido con Docker
 Sin necesidad de instalar Python ni Node.js, solo [Docker Desktop](https://www.docker.com/products/docker-desktop/).
+```bash
+git clone https://github.com/alexcloux99/gymshop.git
+cd gymshop
+docker-compose up --build
 ```
- git clone https://github.com/alexcloux99/gymshop.git
- cd gymshop
- docker-compose up --build
-```
--Frontend: http://localhost:5173
--Backend: http://127.0.0.1:8000
--Admin: http://127.0.0.1:8000/admin → admin / amcfit123
-Para parar: Ctrl + C
+
+| | URL |
+|---|---|
+| 🌐 Frontend | http://localhost:5173 |
+| ⚙️ Backend | http://127.0.0.1:8000 |
+| 🔑 Admin | http://127.0.0.1:8000/admin → `admin` / `amcfit123` |
+
+> Para parar: `Ctrl + C`
 ## 🛠️ Dependencias
 Para arrancar este proyecto necesitas tener instalado:
 *   **Git**: Para la clonación del repositorio. [Descargar aquí](https://git-scm.com/install/windows)
