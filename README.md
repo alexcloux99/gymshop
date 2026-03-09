@@ -9,7 +9,8 @@ git clone https://github.com/alexcloux99/gymshop.git
 cd gymshop
 docker-compose up --build
 ```
-
+# Una vez creada la imagen
+docker-compose up
 | | URL |
 |---|---|
 | 🌐 Frontend | http://localhost:5173 |
