@@ -28,6 +28,8 @@ class Order(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+        verbose_name = "Pedido"
+        verbose_name_plural = "Pedidos"
 
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items") 
@@ -35,3 +37,7 @@ class OrderItem(models.Model):
     qty = models.PositiveIntegerField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
     size = models.CharField(max_length=10, blank=True, null=True)
+
+    class Meta:
+        verbose_name = "Línea de pedido"
+        verbose_name_plural = "Líneas de pedido"

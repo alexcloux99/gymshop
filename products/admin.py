@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.apps import apps 
 from .models import Product, Reviews, ProductVariant
 
 class ProductVariantInline(admin.TabularInline):
@@ -15,3 +16,4 @@ class ProductAdmin(admin.ModelAdmin):
 
 admin.site.register(Reviews)
 admin.site.register(ProductVariant)
+apps.get_app_config('products').verbose_name = "Productos"

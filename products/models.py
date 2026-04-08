@@ -22,6 +22,8 @@ class Product(models.Model):
 
     class Meta:
         ordering = ["name", "category"]
+        verbose_name = "Producto"
+        verbose_name_plural = "Productos"
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -46,9 +48,16 @@ class ProductVariant(models.Model):
     def __str__(self):
         return f"{self.product.name} - Talla {self.size} (Stock: {self.stock})"
 
+    class Meta:
+        verbose_name = "Talla"
+        verbose_name_plural = "Tallas"
+
 class Reviews(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="reviews")
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     rating = models.PositiveSmallIntegerField(default=5)
     description = models.CharField(max_length=200, blank=True)
     created = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        verbose_name = "Reseña"
+        verbose_name_plural = "Reseñas"
